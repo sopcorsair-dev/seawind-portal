@@ -3066,10 +3066,28 @@ function selectAllSkills(forceCheck = false) {
         function readNotification(id, path, type) {
             const item = notifications.find(n => n.id === id);
             if (item) item.isRead = true;
+            
             updateNotificationBadge();
-            showNotification();
-            if (type === 'image') openImageModal(path);
-            else window.open(path, '_blank');
+            showNotification(); // Cập nhật giao diện để mất chấm đỏ chưa đọc
+            
+            // Tự động đóng bảng thông báo lại để nhường chỗ cho khung Iframe
+            document.getElementById('notificationModal').classList.add('hidden');
+
+            // Xử lý mở file tùy theo loại
+            if (type === 'image') {
+                openImageModal(path);
+            } else if (type === 'video') {
+                // Xử lý link youtube mượt mà chống lỗi 153 giống hệt cột 4
+                let videoId = "";
+                const ytMatch = path.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+                if (ytMatch && ytMatch[1]) videoId = ytMatch[1];
+                
+                const embedUrl = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0` : path;
+                openDocumentModal(embedUrl);
+            } else {
+                // Mở Tài liệu Quy trình (Sharepoint/PDF) bằng khung Iframe
+                openDocumentModal(path);
+            }
         }
 
         // CHỨC NĂNG 2: THÊM NHÃN "MỚI/NEW" VÀO 2 TÀI LIỆU GẦN NHẤT ĐỂ THỢ CHÚ Ý
