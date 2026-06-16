@@ -5586,8 +5586,42 @@ let adminActionLogs = ${JSON.stringify(adminActionLogs, null, 4)};
         // Init (Khởi chạy khi mở trang web)
         // Init (Khởi chạy khi mở trang web)
         window.onload = function() {
+            
+            // =========================================================
+            // THÊM MỚI: TRẠM GÁC TỰ ĐỘNG KHÓA MÀN HÌNH KHI QUA NGÀY MỚI
+            // =========================================================
+            setInterval(() => {
+                // Chỉ kiểm tra khi Xưởng ĐANG TẮT (Nghĩa là màn hình đang mở đủ 5 cột)
+                if (!isFactoryMode) {
+                    const todayStr = new Date().toLocaleDateString('en-GB');
+                    const savedDate = localStorage.getItem('factoryAuthDate');
+                    
+                    // Nếu ngày đã lưu khác với ngày hôm nay (Tức là đã qua 12h đêm)
+                    if (savedDate && savedDate !== todayStr) {
+                        // 1. Tước quyền quản lý ngay lập tức
+                        localStorage.removeItem('isFactoryMgrAuthed');
+                        localStorage.removeItem('factoryAuthDate');
+                        
+                        // 2. Tự động ép bật lại Chế độ Xưởng (Khóa màn hình lại)
+                        executeToggleFactory();
+                        
+                        // (Tùy chọn) Bắn log hệ thống nếu muốn ghi nhận sự kiện này
+                        if (typeof sendSystemLogAlert === 'function') {
+                            const now = new Date();
+                            const timestamp = `${("0"+now.getDate()).slice(-2)}/${("0"+(now.getMonth()+1)).slice(-2)}/${now.getFullYear()} ${("0"+now.getHours()).slice(-2)}:${("0"+now.getMinutes()).slice(-2)}`;
+                            sendSystemLogAlert({
+                                time: timestamp, action: 'TỰ ĐỘNG KHÓA', module: 'BẢO MẬT', item: 'Hệ thống Xưởng',
+                                details: { vi: 'Chuyển ngày mới. Đã tự động khóa lại Chế độ Xưởng.', en: 'Day rolled over. Auto-locked to Factory Mode.' }
+                            });
+                        }
+                    }
+                }
+            }, 60000); // 60000 mili-giây = Quét 1 phút 1 lần
+            // =========================================================
+
+
             // === BẮT ĐẦU DÁN THÊM: HIỂN THỊ VIDEO HƯỚNG DẪN ===
-            // Chỉ hiển thị 1 lần mỗi phiên làm việc để không làm phiền người dùng khi F5
+            // (Phần code cũ của bạn bên dưới giữ nguyên không đụng tới...)
             if (!sessionStorage.getItem('introVideoShown')) {
                 setTimeout(() => {
                     document.getElementById('introVideoModal').classList.remove('hidden');
