@@ -294,7 +294,11 @@
                         <span data-vi="Nhập Liệu" data-en="Quick Entry">Nhập Liệu</span>
                     </div>
                 </button>
-
+				<!-- NÚT HƯỚNG DẪN SỬ DỤNG (MỚI THÊM) -->
+                <button onclick="openIntroVideo()" class="flex items-center space-x-2 text-sm font-medium text-white bg-white/10 border border-white/20 px-3 py-2 rounded-lg hover:bg-white/20 transition-all backdrop-blur-md shadow-[0_0_10px_rgba(255,255,255,0.1)]" title="Xem lại video hướng dẫn">
+                    <i data-lucide="play-circle" class="w-4 h-4 text-emerald-400 animate-pulse"></i>
+                    <span class="hidden lg:inline" data-vi="Hướng Dẫn" data-en="Guide">Hướng Dẫn</span>
+                </button>
                 <!-- Dropdown Ngôn ngữ -->
                 <div class="relative">
                     <button id="langBtn" class="flex items-center space-x-2 text-sm font-medium text-white bg-white/10 border border-white/20 px-3 py-2 rounded-lg hover:bg-white/20 transition-all backdrop-blur-md">
@@ -4522,6 +4526,12 @@ let adminActionLogs = ${JSON.stringify(adminActionLogs, null, 4)};
         }
 
         function closeAllContentModal() { document.getElementById('allContentModal').classList.add('hidden'); }
+		// ==================== HÀM MỞ VIDEO GIỚI THIỆU ====================
+        function openIntroVideo() {
+            document.getElementById('introVideoModal').classList.remove('hidden');
+            // Tự động nạp lại icon nếu cần
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
 // ==================== HÀM ĐÓNG VIDEO GIỚI THIỆU ====================
         function closeIntroVideo() {
             const modal = document.getElementById('introVideoModal');
