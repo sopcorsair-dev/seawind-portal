@@ -5564,8 +5564,7 @@ let adminActionLogs = ${JSON.stringify(adminActionLogs, null, 4)};
             
             // Nếu phát hiện có người đang mở web thông qua quét mã QR
             if (viewEmpId) {
-                // Tắt chế độ Xưởng đi để giao diện cuộn chuẩn xác
-                if (isFactoryMode) executeToggleFactory(); 
+                // ĐÃ XÓA LỆNH TẮT CHẾ ĐỘ XƯỞNG TẠI ĐÂY (Để khách chỉ thấy 3 cột 1, 2, 4)
                 
                 // Thay vì mở thẳng hồ sơ, ta hiển thị Bảng Chọn Ngôn Ngữ
                 setTimeout(() => {
