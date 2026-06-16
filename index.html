@@ -2934,120 +2934,192 @@ function selectAllSkills(forceCheck = false) {
             
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
-        // Logic AI phân tích riêng cho lưới Heatmap
-        function analyzeHeatmapAI() {
-            const filterLine = document.getElementById('heatmapLineFilter').value;
-            const aiBox = document.getElementById('heatmapAiSummary');
-            const isEn = currentLang === 'en';
-            
-            let filtered = employeeList;
-            if(filterLine !== 'all') {
-                filtered = employeeList.filter(e => e.line === filterLine);
-            }
+        // Thay thế toàn bộ hàm analyzeHeatmapAI cũ bằng đoạn code này
+function analyzeHeatmapAI() {
+    const filterLine = document.getElementById('heatmapLineFilter').value;
+    const aiBox = document.getElementById('heatmapAiSummary');
+    const isEn = currentLang === 'en';
+    
+    // 1. Lọc dữ liệu theo chuyền
+    let filtered = employeeList;
+    if(filterLine !== 'all') {
+        filtered = employeeList.filter(e => e.line === filterLine);
+    }
 
-            if (filtered.length === 0) {
-                aiBox.innerHTML = `<p class="text-slate-500 text-sm italic">${isEn ? 'No data to analyze.' : 'Không có dữ liệu để phân tích.'}</p>`;
-                aiBox.classList.remove('hidden');
-                return;
-            }
+    if (filtered.length === 0) {
+        aiBox.innerHTML = `<p class="text-slate-500 text-sm italic">${isEn ? 'No data to analyze.' : 'Không có dữ liệu để phân tích.'}</p>`;
+        aiBox.classList.remove('hidden');
+        return;
+    }
 
-            const skills = ['lamination', 'gelcoat', 'bonding', 'assembly', 'fitout', 'timber', 'plumbing', 'fabric', 'maintenance'];
-            const labels = ['Lamination', 'Gelcoat', 'Bonding', 'Assembly', 'FitOut', 'Timber', 'Plumbing', 'Fabric', 'Maintain'];
-            
-            filtered.forEach(emp => {
-                if(emp.customSkills) {
-                    emp.customSkills.forEach(cs => {
-                        if(!skills.includes(cs.label)) {
-                            skills.push(cs.label);
-                            labels.push(cs.label);
-                        }
-                    });
+    // 2. Thu thập danh sách kỹ năng
+    const skills = ['lamination', 'gelcoat', 'bonding', 'assembly', 'fitout', 'timber', 'plumbing', 'fabric', 'maintenance'];
+    const labels = ['Lamination', 'Gelcoat', 'Bonding', 'Assembly', 'FitOut', 'Timber', 'Plumbing', 'Fabric', 'Maintain'];
+    
+    filtered.forEach(emp => {
+        if(emp.customSkills) {
+            emp.customSkills.forEach(cs => {
+                if(!skills.includes(cs.label)) {
+                    skills.push(cs.label);
+                    labels.push(cs.label);
                 }
             });
-
-            let skillCounts = {};
-            skills.forEach(sk => skillCounts[sk] = 0);
-            let totalPass = 0;
-            let totalPossible = filtered.length * skills.length;
-
-            filtered.forEach(emp => {
-                skills.forEach(sk => {
-                    let val = emp[sk];
-                    if (val === undefined && emp.customSkills) {
-                        let found = emp.customSkills.find(cs => cs.label === sk);
-                        if (found) val = found.val;
-                    }
-
-                    let isPass = false;
-                    if (typeof val === 'object' && val !== null) {
-                        isPass = ((val.theory + val.practice) / 2) >= 8;
-                    } else {
-                        isPass = val === 'PASS';
-                    }
-                    if(isPass) {
-                        skillCounts[sk]++;
-                        totalPass++;
-                    }
-                });
-            });
-
-            // 1. TÌM TẤT CẢ CÁC MÔN MAX / MIN THAY VÌ CHỈ 1 MÔN
-            let maxCount = -1;
-            let minCount = 9999;
-            skills.forEach(sk => {
-                if(skillCounts[sk] > maxCount) maxCount = skillCounts[sk];
-                if(skillCounts[sk] < minCount) minCount = skillCounts[sk];
-            });
-
-            let maxSkills = skills.filter(sk => skillCounts[sk] === maxCount).map(sk => labels[skills.indexOf(sk)]);
-            let minSkills = skills.filter(sk => skillCounts[sk] === minCount).map(sk => labels[skills.indexOf(sk)]);
-
-            const maxLabel = maxSkills.join(', ');
-            const minLabel = minSkills.join(', ');
-            const passRate = Math.round((totalPass / totalPossible) * 100) || 0;
-            const targetName = filterLine === 'all' ? (isEn ? 'Entire Factory' : 'Toàn bộ xưởng') : filterLine;
-
-            aiBox.innerHTML = isEn ?
-                `<div class="bg-purple-50 border border-purple-200 p-4 rounded-xl shadow-sm">
-                    <h3 class="text-sm font-bold text-purple-800 flex items-center gap-2 mb-3"><i data-lucide="bot" class="w-4 h-4"></i> AI Matrix Analysis: ${targetName}</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                        <div class="bg-white p-3 rounded shadow-sm border border-slate-100">
-                            <p class="text-[10px] text-slate-500 font-bold uppercase">Overall Competency</p>
-                            <p class="text-xl font-black text-seawind-blue">${passRate}%</p>
-                        </div>
-                        <div class="bg-white p-3 rounded shadow-sm border border-emerald-100">
-                            <p class="text-[10px] text-emerald-600 font-bold uppercase">Core Strength</p>
-                            <p class="text-sm font-black text-emerald-700">${maxLabel} <span class="text-xs font-normal">(${maxCount}/${filtered.length})</span></p>
-                        </div>
-                        <div class="bg-white p-3 rounded shadow-sm border border-rose-100">
-                            <p class="text-[10px] text-rose-600 font-bold uppercase">Critical Weakness</p>
-                            <p class="text-sm font-black text-rose-700">${minLabel} <span class="text-xs font-normal">(${minCount}/${filtered.length})</span></p>
-                        </div>
-                    </div>
-                    <p class="text-xs text-slate-700 leading-relaxed bg-white p-3 rounded border border-slate-200"><b class="text-purple-700">Manager Recommendation:</b> Consider re-allocating staff strong in ${maxLabel} to assist with ${minLabel}, or schedule an immediate upskilling workshop for ${minLabel} to prevent production delays.</p>
-                </div>` :
-                `<div class="bg-purple-50 border border-purple-200 p-4 rounded-xl shadow-sm">
-                    <h3 class="text-sm font-bold text-purple-800 flex items-center gap-2 mb-3"><i data-lucide="bot" class="w-4 h-4"></i> AI Phân Tích Ma Trận: ${targetName}</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                        <div class="bg-white p-3 rounded shadow-sm border border-slate-100">
-                            <p class="text-[10px] text-slate-500 font-bold uppercase">Độ Phủ Năng Lực</p>
-                            <p class="text-xl font-black text-seawind-blue">${passRate}%</p>
-                        </div>
-                        <div class="bg-white p-3 rounded shadow-sm border border-emerald-100">
-                            <p class="text-[10px] text-emerald-600 font-bold uppercase">Thế Mạnh Tổ</p>
-                            <p class="text-sm font-black text-emerald-700">${maxLabel} <span class="text-xs font-normal">(${maxCount}/${filtered.length})</span></p>
-                        </div>
-                        <div class="bg-white p-3 rounded shadow-sm border border-rose-100">
-                            <p class="text-[10px] text-rose-600 font-bold uppercase">Lỗ Hổng Kỹ Năng</p>
-                            <p class="text-sm font-black text-rose-700">${minLabel} <span class="text-xs font-normal">(${minCount}/${filtered.length})</span></p>
-                        </div>
-                    </div>
-                    <p class="text-xs text-slate-700 leading-relaxed bg-white p-3 rounded border border-slate-200"><b class="text-purple-700">Gợi ý Quản lý:</b> Cân nhắc điều phối nhân sự giỏi nhóm môn ${maxLabel} hỗ trợ chéo, hoặc tổ chức đào tạo tăng cường nhóm môn ${minLabel} để tránh làm chậm nhịp độ chuyền.</p>
-                </div>`;
-            
-            aiBox.classList.remove('hidden');
-            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
+    });
+
+    // 3. Phân tích chuyên sâu (Đếm Master, Assistant, Fail cho TỪNG môn)
+    let stats = {};
+    skills.forEach(sk => stats[sk] = { master: 0, assist: 0, fail: 0, total: filtered.length });
+    
+    let polyvalentStaffCount = 0; // Đếm số thợ đa năng (>=3 kỹ năng Master)
+
+    filtered.forEach(emp => {
+        let empMasterCount = 0;
+        skills.forEach(sk => {
+            let val = emp[sk];
+            if (val === undefined && emp.customSkills) {
+                let found = emp.customSkills.find(cs => cs.label === sk);
+                if (found) val = found.val;
+            }
+
+            if (typeof val === 'object' && val !== null) {
+                let avg = (val.theory + val.practice) / 2;
+                if (avg >= 8) { stats[sk].master++; empMasterCount++; }
+                else if (avg >= 5) { stats[sk].assist++; }
+                else { stats[sk].fail++; }
+            } else {
+                if (val === 'PASS') { stats[sk].master++; empMasterCount++; }
+                else if (val === 'FAIL') { stats[sk].fail++; }
+                else { stats[sk].fail++; } // N/A cũng tính là chưa đạt chuẩn
+            }
+        });
+        if (empMasterCount >= 3) polyvalentStaffCount++;
+    });
+
+    // 4. Tìm kiếm Insight (Thắt cổ chai & Cơ hội)
+    let lowestSkill = { name: '', passRate: 100 };
+    let highestAssistSkill = { name: '', count: -1 };
+    
+    let masterData = []; let assistData = []; let failData = []; let chartLabels = [];
+
+    skills.forEach((sk, i) => {
+        let s = stats[sk];
+        let pRate = (s.master / s.total) * 100;
+        
+        if (pRate < lowestSkill.passRate) {
+            lowestSkill = { name: labels[i], passRate: pRate };
+        }
+        if (s.assist > highestAssistSkill.count) {
+            highestAssistSkill = { name: labels[i], count: s.assist };
+        }
+
+        // Push data cho biểu đồ
+        chartLabels.push(labels[i]);
+        masterData.push(s.master);
+        assistData.push(s.assist);
+        failData.push(s.fail);
+    });
+
+    const targetName = filterLine === 'all' ? (isEn ? 'Entire Factory' : 'Toàn bộ xưởng') : filterLine;
+    const polyPercent = Math.round((polyvalentStaffCount / filtered.length) * 100);
+
+    // 5. Build Giao diện Chuyên gia (Gồm Báo cáo text + Canvas vẽ biểu đồ)
+    aiBox.innerHTML = isEn ? `
+        <div class="bg-gradient-to-br from-slate-900 to-indigo-950 p-5 rounded-xl shadow-lg border border-indigo-500/30 text-slate-200">
+            <h3 class="text-sm font-black text-cyan-400 flex items-center gap-2 mb-4 uppercase tracking-widest border-b border-white/10 pb-2"><i data-lucide="cpu" class="w-4 h-4"></i> AI Strategic Matrix Analysis: ${targetName}</h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Cột Text Phân tích -->
+                <div class="space-y-4">
+                    <div class="bg-white/5 p-3 rounded-lg border border-white/10 border-l-4 border-l-rose-500">
+                        <p class="text-[11px] font-bold text-rose-400 uppercase flex items-center gap-1.5"><i data-lucide="siren" class="w-3.5 h-3.5"></i> Critical Bottleneck Risk</p>
+                        <p class="text-xs mt-1 leading-relaxed">The skill <b>${lowestSkill.name}</b> has a severe deficiency with only <b>${Math.round(lowestSkill.passRate)}%</b> master readiness. <span class="text-rose-300">Recommendation: Immediate cross-training required to prevent production delays.</span></p>
+                    </div>
+                    
+                    <div class="bg-white/5 p-3 rounded-lg border border-white/10 border-l-4 border-l-amber-400">
+                        <p class="text-[11px] font-bold text-amber-400 uppercase flex items-center gap-1.5"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Upskilling Opportunity</p>
+                        <p class="text-xs mt-1 leading-relaxed"><b>${highestAssistSkill.name}</b> has <b>${highestAssistSkill.count}</b> staff at Assistant level. <span class="text-amber-200">Action: Implement "Shadowing/OJT" (1 Master mentors 1 Assistant) to quickly convert them to Masters.</span></p>
+                    </div>
+
+                    <div class="bg-white/5 p-3 rounded-lg border border-white/10 border-l-4 border-l-emerald-400">
+                        <p class="text-[11px] font-bold text-emerald-400 uppercase flex items-center gap-1.5"><i data-lucide="users" class="w-3.5 h-3.5"></i> Workforce Polyvalence</p>
+                        <p class="text-xs mt-1 leading-relaxed"><b>${polyPercent}%</b> of this group (${polyvalentStaffCount} staff) are multi-skilled (3+ Master skills). <span class="text-emerald-200">They provide high operational flexibility and should be utilized as floaters.</span></p>
+                    </div>
+                </div>
+
+                <!-- Cột Biểu đồ -->
+                <div class="bg-white p-3 rounded-lg shadow-inner relative">
+                    <h4 class="text-[10px] font-bold text-slate-500 text-center uppercase mb-2">Skill Distribution Readiness</h4>
+                    <div class="h-[200px] w-full"><canvas id="heatmapAiDetailedChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+    ` : `
+        <div class="bg-gradient-to-br from-slate-900 to-indigo-950 p-5 rounded-xl shadow-lg border border-indigo-500/30 text-slate-200">
+            <h3 class="text-sm font-black text-cyan-400 flex items-center gap-2 mb-4 uppercase tracking-widest border-b border-white/10 pb-2"><i data-lucide="cpu" class="w-4 h-4"></i> Chuyên gia AI Phân tích: ${targetName}</h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Cột Text Phân tích -->
+                <div class="space-y-4">
+                    <div class="bg-white/5 p-3 rounded-lg border border-white/10 border-l-4 border-l-rose-500">
+                        <p class="text-[11px] font-bold text-rose-400 uppercase flex items-center gap-1.5"><i data-lucide="siren" class="w-3.5 h-3.5"></i> Nguy cơ thắt cổ chai (Bottleneck)</p>
+                        <p class="text-xs mt-1 leading-relaxed text-justify">Kỹ năng <b>${lowestSkill.name}</b> đang báo động đỏ với tỷ lệ Thợ Chính chỉ đạt <b>${Math.round(lowestSkill.passRate)}%</b>. <span class="text-rose-300">Khuyến nghị: Rất dễ gây nghẽn chuyền tại khâu này, cần điều động người từ chuyền khác hỗ trợ khẩn cấp.</span></p>
+                    </div>
+                    
+                    <div class="bg-white/5 p-3 rounded-lg border border-white/10 border-l-4 border-l-amber-400">
+                        <p class="text-[11px] font-bold text-amber-400 uppercase flex items-center gap-1.5"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Cơ hội chuyển hóa tay nghề</p>
+                        <p class="text-xs mt-1 leading-relaxed text-justify">Đang có <b>${highestAssistSkill.count}</b> nhân sự ở mức Thợ Phụ môn <b>${highestAssistSkill.name}</b>. <span class="text-amber-200">Hành động: Áp dụng OJT "1 kèm 1" để biến nhóm này thành Thợ Chính trong thời gian ngắn nhất thay vì tuyển mới.</span></p>
+                    </div>
+
+                    <div class="bg-white/5 p-3 rounded-lg border border-white/10 border-l-4 border-l-emerald-400">
+                        <p class="text-[11px] font-bold text-emerald-400 uppercase flex items-center gap-1.5"><i data-lucide="users" class="w-3.5 h-3.5"></i> Chỉ số Đa nhiệm (Polyvalence)</p>
+                        <p class="text-xs mt-1 leading-relaxed text-justify">Có <b>${polyPercent}%</b> đội ngũ (${polyvalentStaffCount} người) là thợ đa năng (Đạt chuẩn >=3 môn). <span class="text-emerald-200">Đây là lực lượng cơ động cực tốt, quản lý nên dùng nhóm này làm "Joker" trám vào các khâu bị vắng người.</span></p>
+                    </div>
+                </div>
+
+                <!-- Cột Biểu đồ -->
+                <div class="bg-white p-3 rounded-lg shadow-inner relative">
+                    <h4 class="text-[10px] font-bold text-slate-500 text-center uppercase mb-1">Cơ cấu Tay nghề Theo Môn (Readiness)</h4>
+                    <div class="h-[220px] w-full"><canvas id="heatmapAiDetailedChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    aiBox.classList.remove('hidden');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // 6. Vẽ biểu đồ Stacked Bar Chart.js
+    setTimeout(() => {
+        const ctx = document.getElementById('heatmapAiDetailedChart').getContext('2d');
+        if (heatmapAiChartInst) heatmapAiChartInst.destroy();
+        
+        heatmapAiChartInst = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: chartLabels,
+                datasets: [
+                    { label: isEn ? 'Master' : 'Thợ Chính', data: masterData, backgroundColor: '#10b981', stack: 'Stack 0' },
+                    { label: isEn ? 'Assistant' : 'Thợ Phụ', data: assistData, backgroundColor: '#f59e0b', stack: 'Stack 0' },
+                    { label: isEn ? 'Fail/NA' : 'Chưa đạt', data: failData, backgroundColor: '#e2e8f0', stack: 'Stack 0' } // Màu xám nhạt cho Fail để đỡ rối mắt
+                ]
+            },
+            options: {
+                indexAxis: 'y', // Đổi thành biểu đồ ngang nhìn cho rành mạch
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { font: { size: 9, family: 'Inter' }, boxWidth: 10 } },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    x: { stacked: true, ticks: { display: false }, grid: { display: false } },
+                    y: { stacked: true, ticks: { font: { size: 9, family: 'Inter', weight: 'bold' } }, grid: { display: false } }
+                }
+            }
+        });
+    }, 100); // Delay 100ms để DOM render xong Canvas
+}
 
         function openRetrainAlertModal() {
             updateRetrainAlerts();
@@ -5189,6 +5261,7 @@ let adminActionLogs = ${JSON.stringify(adminActionLogs, null, 4)};
 // =========================================================
         // HÀM XỬ LÝ DASHBOARD ĐÀO TẠO & AI PHÂN TÍCH
         // =========================================================
+		let heatmapAiChartInst = null; // Thêm dòng này để quản lý biểu đồ AI trong Heatmap
         let passFailChartInst = null;
         let skillsBarChartInst = null;
         let trendLineChartInst = null;
