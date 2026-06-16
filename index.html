@@ -3021,9 +3021,48 @@ function analyzeHeatmapAI() {
     });
 
     const targetName = filterLine === 'all' ? (isEn ? 'Entire Factory' : 'Toàn bộ xưởng') : filterLine;
-    const polyPercent = Math.round((polyvalentStaffCount / filtered.length) * 100);
+    const polyPercent = Math.round((polyvalentStaffCount / filtered.length) * 100) || 0;
 
-    // 5. Build Giao diện Chuyên gia (Gồm Báo cáo text + Canvas vẽ biểu đồ)
+    // ==============================================================
+    // BỘ XỬ LÝ NGÔN NGỮ TỰ NHIÊN (NLP) CHO AI - CHỐNG RẬP KHUÔN
+    // ==============================================================
+    
+    // 1. Kịch bản cho "Nguy cơ thắt cổ chai" (Bottleneck)
+    let bottleneckHtmlEn, bottleneckHtmlVi;
+    if (lowestSkill.passRate === 100) {
+        bottleneckHtmlEn = `All skills are at <b>100%</b> master readiness. <span class="text-rose-300">Excellent performance! The production line is operating at optimal capacity.</span>`;
+        bottleneckHtmlVi = `Toàn bộ các khâu đều đạt <b>100%</b> tỷ lệ Thợ Chính. <span class="text-rose-300">Tuyệt vời! Chuyền đang hoạt động ở trạng thái hoàn hảo nhất, không có điểm nghẽn.</span>`;
+    } else if (lowestSkill.passRate === 0) {
+        bottleneckHtmlEn = `The skill <b>${lowestSkill.name}</b> has <b>0%</b> master readiness. <span class="text-rose-300">CRITICAL: Production is paralyzed here. Immediate intervention required!</span>`;
+        bottleneckHtmlVi = `Khâu <b>${lowestSkill.name}</b> đang trắng tay với <b>0%</b> Thợ Chính. <span class="text-rose-300">BÁO ĐỘNG ĐỎ: Chuyền có nguy cơ tê liệt tại khâu này. Cần xin chi viện khẩn cấp ngay lập tức!</span>`;
+    } else {
+        bottleneckHtmlEn = `The skill <b>${lowestSkill.name}</b> has a severe deficiency with only <b>${Math.round(lowestSkill.passRate)}%</b> master readiness. <span class="text-rose-300">Recommendation: Immediate cross-training required to prevent production delays.</span>`;
+        bottleneckHtmlVi = `Kỹ năng <b>${lowestSkill.name}</b> đang báo động đỏ với tỷ lệ Thợ Chính chỉ đạt <b>${Math.round(lowestSkill.passRate)}%</b>. <span class="text-rose-300">Khuyến nghị: Rất dễ gây nghẽn chuyền tại khâu này, cần điều động người từ chuyền khác hỗ trợ khẩn cấp.</span>`;
+    }
+
+    // 2. Kịch bản cho "Cơ hội nâng cấp" (Upskilling)
+    let upskillHtmlEn, upskillHtmlVi;
+    if (highestAssistSkill.count === 0) {
+        upskillHtmlEn = `Currently, there are <b>0</b> staff at Assistant level across all skills. <span class="text-amber-200">Focus on foundational training for Trainees to build the next generation of workers.</span>`;
+        upskillHtmlVi = `Hiện tại <b>không có</b> nhân sự nào ở mức Thợ Phụ. <span class="text-amber-200">Quản lý cần tập trung đào tạo nền tảng cho nhóm lao động phổ thông mới vào nghề.</span>`;
+    } else {
+        upskillHtmlEn = `<b>${highestAssistSkill.name}</b> has <b>${highestAssistSkill.count}</b> staff at Assistant level. <span class="text-amber-200">Action: Implement "Shadowing/OJT" (1 Master mentors 1 Assistant) to quickly convert them to Masters.</span>`;
+        upskillHtmlVi = `Đang có <b>${highestAssistSkill.count}</b> nhân sự ở mức Thợ Phụ môn <b>${highestAssistSkill.name}</b>. <span class="text-amber-200">Hành động: Áp dụng OJT "1 kèm 1" để biến nhóm này thành Thợ Chính trong thời gian ngắn nhất thay vì tuyển mới.</span>`;
+    }
+
+    // 3. Kịch bản cho "Chỉ số Đa nhiệm" (Polyvalence) - CHỮA LỖI 0 NGƯỜI
+    let polyHtmlEn, polyHtmlVi;
+    if (polyvalentStaffCount === 0) {
+        polyHtmlEn = `Currently, <b>0 staff</b> meet the polyvalence standard (3+ Master skills). <span class="text-emerald-200">Warning: The team lacks flexibility. It's highly risky if key personnel take leave. Cross-training is urgently needed!</span>`;
+        polyHtmlVi = `Hiện tại <b>chưa có</b> nhân sự nào đạt chuẩn đa năng (>=3 môn). <span class="text-emerald-200">Cảnh báo: Đội ngũ đang thiếu tính linh hoạt trầm trọng. Sẽ rất rủi ro nếu có nhân sự chủ chốt nghỉ phép. Cần lên kế hoạch đào tạo chéo ngay!</span>`;
+    } else {
+        polyHtmlEn = `<b>${polyPercent}%</b> of this group (${polyvalentStaffCount} staff) are multi-skilled (3+ Master skills). <span class="text-emerald-200">They provide high operational flexibility and should be utilized as floaters.</span>`;
+        polyHtmlVi = `Có <b>${polyPercent}%</b> đội ngũ (${polyvalentStaffCount} người) là thợ đa năng (Đạt chuẩn >=3 môn). <span class="text-emerald-200">Đây là lực lượng cơ động cực tốt, quản lý nên dùng nhóm này làm "Joker" trám vào các khâu bị vắng người.</span>`;
+    }
+
+    // ==============================================================
+    // RÁP NỘI DUNG ĐÃ XỬ LÝ VÀO GIAO DIỆN
+    // ==============================================================
     aiBox.innerHTML = isEn ? `
         <div class="bg-gradient-to-br from-slate-900 to-indigo-950 p-5 rounded-xl shadow-lg border border-indigo-500/30 text-slate-200">
             <h3 class="text-sm font-black text-cyan-400 flex items-center gap-2 mb-4 uppercase tracking-widest border-b border-white/10 pb-2"><i data-lucide="cpu" class="w-4 h-4"></i> AI Strategic Matrix Analysis: ${targetName}</h3>
@@ -3033,17 +3072,17 @@ function analyzeHeatmapAI() {
                 <div class="space-y-4">
                     <div class="bg-white/5 p-3 rounded-lg border border-white/10 border-l-4 border-l-rose-500">
                         <p class="text-[11px] font-bold text-rose-400 uppercase flex items-center gap-1.5"><i data-lucide="siren" class="w-3.5 h-3.5"></i> Critical Bottleneck Risk</p>
-                        <p class="text-xs mt-1 leading-relaxed">The skill <b>${lowestSkill.name}</b> has a severe deficiency with only <b>${Math.round(lowestSkill.passRate)}%</b> master readiness. <span class="text-rose-300">Recommendation: Immediate cross-training required to prevent production delays.</span></p>
+                        <p class="text-xs mt-1 leading-relaxed text-justify">${bottleneckHtmlEn}</p>
                     </div>
                     
                     <div class="bg-white/5 p-3 rounded-lg border border-white/10 border-l-4 border-l-amber-400">
                         <p class="text-[11px] font-bold text-amber-400 uppercase flex items-center gap-1.5"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Upskilling Opportunity</p>
-                        <p class="text-xs mt-1 leading-relaxed"><b>${highestAssistSkill.name}</b> has <b>${highestAssistSkill.count}</b> staff at Assistant level. <span class="text-amber-200">Action: Implement "Shadowing/OJT" (1 Master mentors 1 Assistant) to quickly convert them to Masters.</span></p>
+                        <p class="text-xs mt-1 leading-relaxed text-justify">${upskillHtmlEn}</p>
                     </div>
 
                     <div class="bg-white/5 p-3 rounded-lg border border-white/10 border-l-4 border-l-emerald-400">
                         <p class="text-[11px] font-bold text-emerald-400 uppercase flex items-center gap-1.5"><i data-lucide="users" class="w-3.5 h-3.5"></i> Workforce Polyvalence</p>
-                        <p class="text-xs mt-1 leading-relaxed"><b>${polyPercent}%</b> of this group (${polyvalentStaffCount} staff) are multi-skilled (3+ Master skills). <span class="text-emerald-200">They provide high operational flexibility and should be utilized as floaters.</span></p>
+                        <p class="text-xs mt-1 leading-relaxed text-justify">${polyHtmlEn}</p>
                     </div>
                 </div>
 
@@ -3063,17 +3102,17 @@ function analyzeHeatmapAI() {
                 <div class="space-y-4">
                     <div class="bg-white/5 p-3 rounded-lg border border-white/10 border-l-4 border-l-rose-500">
                         <p class="text-[11px] font-bold text-rose-400 uppercase flex items-center gap-1.5"><i data-lucide="siren" class="w-3.5 h-3.5"></i> Nguy cơ thắt cổ chai (Bottleneck)</p>
-                        <p class="text-xs mt-1 leading-relaxed text-justify">Kỹ năng <b>${lowestSkill.name}</b> đang báo động đỏ với tỷ lệ Thợ Chính chỉ đạt <b>${Math.round(lowestSkill.passRate)}%</b>. <span class="text-rose-300">Khuyến nghị: Rất dễ gây nghẽn chuyền tại khâu này, cần điều động người từ chuyền khác hỗ trợ khẩn cấp.</span></p>
+                        <p class="text-xs mt-1 leading-relaxed text-justify">${bottleneckHtmlVi}</p>
                     </div>
                     
                     <div class="bg-white/5 p-3 rounded-lg border border-white/10 border-l-4 border-l-amber-400">
                         <p class="text-[11px] font-bold text-amber-400 uppercase flex items-center gap-1.5"><i data-lucide="trending-up" class="w-3.5 h-3.5"></i> Cơ hội chuyển hóa tay nghề</p>
-                        <p class="text-xs mt-1 leading-relaxed text-justify">Đang có <b>${highestAssistSkill.count}</b> nhân sự ở mức Thợ Phụ môn <b>${highestAssistSkill.name}</b>. <span class="text-amber-200">Hành động: Áp dụng OJT "1 kèm 1" để biến nhóm này thành Thợ Chính trong thời gian ngắn nhất thay vì tuyển mới.</span></p>
+                        <p class="text-xs mt-1 leading-relaxed text-justify">${upskillHtmlVi}</p>
                     </div>
 
                     <div class="bg-white/5 p-3 rounded-lg border border-white/10 border-l-4 border-l-emerald-400">
                         <p class="text-[11px] font-bold text-emerald-400 uppercase flex items-center gap-1.5"><i data-lucide="users" class="w-3.5 h-3.5"></i> Chỉ số Đa nhiệm (Polyvalence)</p>
-                        <p class="text-xs mt-1 leading-relaxed text-justify">Có <b>${polyPercent}%</b> đội ngũ (${polyvalentStaffCount} người) là thợ đa năng (Đạt chuẩn >=3 môn). <span class="text-emerald-200">Đây là lực lượng cơ động cực tốt, quản lý nên dùng nhóm này làm "Joker" trám vào các khâu bị vắng người.</span></p>
+                        <p class="text-xs mt-1 leading-relaxed text-justify">${polyHtmlVi}</p>
                     </div>
                 </div>
 
