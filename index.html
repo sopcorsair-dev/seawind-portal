@@ -3043,14 +3043,24 @@ function selectAllSkills(forceCheck = false) {
 
         function initNotifications() {
             notifications = [];
+            
+            // --- THÊM MỚI: LẤY DANH SÁCH FILE ĐÃ ĐỌC TỪ TRÌNH DUYỆT ---
+            let readPaths = JSON.parse(localStorage.getItem('swReadNotifs')) || [];
+
             const latestDocs = pdfFiles.slice(-3).reverse();
             latestDocs.forEach((doc, index) => {
-                notifications.push({ id: `doc-${index}`, titleVi: doc.vi, titleEn: doc.en, type: 'doc', path: doc.path, isRead: false });
+                // Kiểm tra xem link này đã nằm trong danh sách đã đọc chưa
+                let hasRead = readPaths.includes(doc.path);
+                notifications.push({ id: `doc-${index}`, titleVi: doc.vi, titleEn: doc.en, type: 'doc', path: doc.path, isRead: hasRead });
             });
+            
             const latestResources = allResources.slice(-3).reverse();
             latestResources.forEach((res, index) => {
-                notifications.push({ id: `res-${index}`, titleVi: res.name, titleEn: res.name, type: res.type, path: res.path, isRead: false });
+                // Kiểm tra xem link này đã nằm trong danh sách đã đọc chưa
+                let hasRead = readPaths.includes(res.path);
+                notifications.push({ id: `res-${index}`, titleVi: res.name, titleEn: res.name, type: res.type, path: res.path, isRead: hasRead });
             });
+            
             updateNotificationBadge();
         }
 
@@ -3065,10 +3075,20 @@ function selectAllSkills(forceCheck = false) {
 
         function readNotification(id, path, type) {
             const item = notifications.find(n => n.id === id);
-            if (item) item.isRead = true;
+            if (item) {
+                item.isRead = true;
+                
+                // --- THÊM MỚI: LƯU TRẠNG THÁI VÀO TRÌNH DUYỆT ĐỂ KHÔNG BỊ MẤT KHI F5 ---
+                let readPaths = JSON.parse(localStorage.getItem('swReadNotifs')) || [];
+                // Nếu path này chưa được lưu thì tống nó vào bộ nhớ
+                if (!readPaths.includes(path)) {
+                    readPaths.push(path);
+                    localStorage.setItem('swReadNotifs', JSON.stringify(readPaths));
+                }
+            }
             
             updateNotificationBadge();
-            showNotification(); // Cập nhật giao diện để mất chấm đỏ chưa đọc
+            showNotification(); // Cập nhật giao diện để làm mờ mục vừa click
             
             // Tự động đóng bảng thông báo lại để nhường chỗ cho khung Iframe
             document.getElementById('notificationModal').classList.add('hidden');
@@ -3077,7 +3097,6 @@ function selectAllSkills(forceCheck = false) {
             if (type === 'image') {
                 openImageModal(path);
             } else if (type === 'video') {
-                // Xử lý link youtube mượt mà chống lỗi 153 giống hệt cột 4
                 let videoId = "";
                 const ytMatch = path.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
                 if (ytMatch && ytMatch[1]) videoId = ytMatch[1];
@@ -3085,7 +3104,6 @@ function selectAllSkills(forceCheck = false) {
                 const embedUrl = videoId ? `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0` : path;
                 openDocumentModal(embedUrl);
             } else {
-                // Mở Tài liệu Quy trình (Sharepoint/PDF) bằng khung Iframe
                 openDocumentModal(path);
             }
         }
