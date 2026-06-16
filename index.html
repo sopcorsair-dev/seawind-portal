@@ -2605,7 +2605,19 @@ document.addEventListener('click', function(event) {
         // CHỨC NĂNG 1: HÀM BẬT/TẮT CHẾ ĐỘ XƯỞNG (ĐÃ NÂNG CẤP BẢO MẬT)
         function toggleFactoryMode() {
             if (isFactoryMode) {
-                if (sessionStorage.getItem('isFactoryMgrAuthed') === 'true') {
+                // --- THÊM MỚI: KIỂM TRA XEM ĐÃ BƯỚC SANG NGÀY HÔM SAU CHƯA ---
+                const todayStr = new Date().toLocaleDateString('en-GB'); // Lấy ngày hôm nay
+                const savedDate = localStorage.getItem('factoryAuthDate'); // Lấy ngày lúc đăng nhập
+                
+                // Nếu ngày lưu khác ngày hôm nay -> Xóa ngay quyền quản lý
+                if (savedDate !== todayStr) {
+                    localStorage.removeItem('isFactoryMgrAuthed');
+                    localStorage.removeItem('factoryAuthDate');
+                }
+                // -------------------------------------------------------------
+
+                // Kiểm tra nếu còn quyền thì cho tắt, không thì bắt đăng nhập
+                if (localStorage.getItem('isFactoryMgrAuthed') === 'true') {
                     executeToggleFactory();
                 } else {
                     loginTarget = 'factory-toggle'; 
@@ -3699,7 +3711,13 @@ function selectAllSkills(forceCheck = false) {
  
                     isSuccess = true;
                     accountRole = "Manager";
-                    sessionStorage.setItem('isFactoryMgrAuthed', 'true'); // Cấp quyền riêng cho Xưởng
+                    
+                    // --- THÊM MỚI: LƯU QUYỀN KÈM THEO NGÀY ĐĂNG NHẬP HIỆN TẠI ---
+                    const todayStr = new Date().toLocaleDateString('en-GB'); // Sinh ra chuỗi VD: 16/06/2026
+                    localStorage.setItem('isFactoryMgrAuthed', 'true'); 
+                    localStorage.setItem('factoryAuthDate', todayStr);
+                    // ------------------------------------------------------------
+                    
                     closeAdminLoginModal();
                     executeToggleFactory();
                 }
