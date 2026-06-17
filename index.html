@@ -1865,9 +1865,10 @@
         let reportList = [];
         let employeeList = [];
         let adminActionLogs = [];
-        
-        // Mặc định tài khoản chống khóa cửa (Sẽ bị đè bởi dữ liệu trên Sheet sau khi load)
         let adminAccounts = [];
+
+        // THÊM BIẾN NÀY ĐỂ LƯU NGÀY GỬI CẢNH BÁO CUỐI CÙNG (CHỐNG SPAM TOÀN CẦU)
+        let globalLastAlertDate = "";
 
         // API SheetDB của bạn
         const SHEETDB_API = "https://sheetdb.io/api/v1/g2hoo34628est"; 
@@ -1896,9 +1897,10 @@
                     reportList = safeParse(db.reportList, reportList);
                     employeeList = safeParse(db.employeeList, employeeList);
                     adminActionLogs = safeParse(db.adminActionLogs, adminActionLogs);
-                    
-                    // Thêm phần đọc Tài khoản quản trị
                     adminAccounts = safeParse(db.adminAccounts, adminAccounts);
+
+                    // ĐỌC NGÀY GỬI CẢNH BÁO TỪ DATABASE
+                    globalLastAlertDate = db.lastAlertDate || "";
                 }
             } catch (error) {
                 console.error("Lỗi đồng bộ dữ liệu:", error);
@@ -1915,8 +1917,9 @@
                 reportList: JSON.stringify(reportList),
                 employeeList: JSON.stringify(employeeList),
                 adminActionLogs: JSON.stringify(adminActionLogs),
-                // Bơm danh sách tài khoản lên Sheet
-                adminAccounts: JSON.stringify(adminAccounts) 
+                adminAccounts: JSON.stringify(adminAccounts),
+                // LƯU NGÀY GỬI CẢNH BÁO LÊN DATABASE
+                lastAlertDate: globalLastAlertDate
             };
 
             const response = await fetch(`${SHEETDB_API}/id/1?sheet=DB`, {
@@ -5199,10 +5202,16 @@ newItemObj = {
         // HÀM TỰ ĐỘNG QUÉT VÀ GỬI CẢNH BÁO HẾT HẠN (TELEGRAM & GOOGLE SCRIPT EMAIL)
         // =========================================================
         function checkAndSendExpiryAlerts() {
-            const ALERTED_STORAGE_KEY = 'sw_alerted_expiries';
-            let alertedKeys = JSON.parse(localStorage.getItem(ALERTED_STORAGE_KEY)) || [];
-            let newAlerts = [];
+            // 1. Lấy ngày hôm nay (VD: 25/10/2026)
+            const todayStr = new Date().toLocaleDateString('en-GB');
 
+            // 2. CHỐT CHẶN SPAM TOÀN CẦU: Nếu Database ghi nhận hôm nay đã gửi rồi thì DỪNG LẠI NGAY
+            if (globalLastAlertDate === todayStr) {
+                console.log("Hệ thống đã gửi cảnh báo hôm nay. Đã bỏ qua để chống Spam.");
+                return;
+            }
+
+            let newAlerts = [];
             const standardSkills = [
                 { k: 'lamination', d: 'lamDate', name: 'Lamination' }, { k: 'gelcoat', d: 'gelDate', name: 'Gelcoat' },
                 { k: 'bonding', d: 'bonDate', name: 'Bonding' }, { k: 'assembly', d: 'assDate', name: 'Assembly' },
@@ -5221,7 +5230,6 @@ newItemObj = {
 
                 skillsToCheck.forEach(sk => {
                     let isPass = false;
-                    // Chấp nhận cấp chứng chỉ cho cả thợ chính (>=8) và thợ phụ (>=5)
                     if (typeof sk.val === 'object' && sk.val !== null) {
                         isPass = ((sk.val.theory + sk.val.practice) / 2) >= 5; 
                     } else {
@@ -5231,31 +5239,28 @@ newItemObj = {
                     if (isPass && sk.date && sk.date !== 'N/A') {
                         const info = getSkillExpiryInfo(sk.date);
                         
-                        // ĐIỀU KIỆN MỚI: Chỉ lấy những chứng chỉ CÒN HẠN TỪ 0 ĐẾN 7 NGÀY (Bỏ qua số âm - đã hết hạn)
+                        // Lấy chứng chỉ CÒN HẠN TỪ 0 ĐẾN 7 NGÀY
                         if (info && info.days >= 0 && info.days <= 7) {
-                            let uniqueAlertId = `${emp.empId}_${sk.name}_${sk.date}`;
-                            
-                            // Chỉ gửi nếu chưa từng gửi thông báo cho cái ID này
-                            if (!alertedKeys.includes(uniqueAlertId)) {
-                                newAlerts.push({
-                                    empName: emp.name,
-                                    empId: emp.empId,
-                                    dept: emp.department || 'N/A',
-                                    skillName: sk.name,
-                                    daysLeft: info.days,
-                                    expiryDate: sk.date,
-                                    alertId: uniqueAlertId
-                                });
-                            }
+                            newAlerts.push({
+                                empName: emp.name, empId: emp.empId, dept: emp.department || 'N/A',
+                                skillName: sk.name, daysLeft: info.days, expiryDate: sk.date
+                            });
                         }
                     }
                 });
             });
 
+            // 3. Nếu có người sắp hết hạn thì gửi, và cập nhật ngày lên Cloud
             if (newAlerts.length > 0) {
                 sendExpiryNotifications(newAlerts);
-                newAlerts.forEach(alert => alertedKeys.push(alert.alertId));
-                localStorage.setItem(ALERTED_STORAGE_KEY, JSON.stringify(alertedKeys));
+
+                // Cập nhật ngày và bơm thẳng lên Google Sheet để báo cho các máy khác
+                globalLastAlertDate = todayStr;
+                syncDatabaseToCloud();
+            } else {
+                // Nếu quét không có ai hết hạn, cũng đánh dấu là hôm nay đã kiểm tra rồi
+                globalLastAlertDate = todayStr;
+                syncDatabaseToCloud();
             }
         }
 
