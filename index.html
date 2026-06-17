@@ -863,10 +863,10 @@
         </div>
     </div>
     <!-- CHỨC NĂNG 5: MODAL HEATMAP QUẢN LÝ TỔNG THỂ -->
-    <div id="heatmapModal" class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto" onclick="closeHeatmapModal(event)">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl flex flex-col relative my-8 print:my-0 print:rounded-none" onclick="event.stopPropagation()">
+    <div id="heatmapModal" class="hidden fixed inset-0 z-[160] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onclick="closeHeatmapModal(event)">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] flex flex-col relative print:my-0 print:rounded-none overflow-hidden" onclick="event.stopPropagation()">
             <!-- Header -->
-            <div class="no-print p-4 border-b flex justify-between items-center bg-slate-900 text-white rounded-t-2xl">
+            <div class="no-print p-4 border-b flex justify-between items-center bg-slate-900 text-white rounded-t-2xl shrink-0">
                 <h3 class="font-bold flex items-center gap-2">
                     <i data-lucide="grid" class="w-5 h-5 text-orange-400"></i>
                     <span data-vi="Heatmap Năng Lực (Skill Matrix)" data-en="Cross-Skill Heatmap Matrix">Heatmap Năng Lực (Skill Matrix)</span>
@@ -875,7 +875,7 @@
             </div>
             
             <!-- Filter & Các nút hành động -->
-            <div class="no-print p-4 bg-slate-50 border-b flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+            <div class="no-print p-4 bg-slate-50 border-b flex flex-col md:flex-row gap-4 items-start md:items-center justify-between shrink-0">
                 <div class="flex items-center gap-4">
                     <label class="text-xs font-bold text-slate-600 uppercase" data-vi="Lọc theo Chuyền (Line):" data-en="Filter by Line:">Lọc theo Chuyền (Line):</label>
                     <!-- ... code cũ của bạn ... -->
@@ -920,7 +920,9 @@
                     </button>
                 </div>
             </div>
-
+		<!-- VÙNG CUỘN ĐỘC LẬP (MỚI THÊM) -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar flex flex-col bg-white">
+           
             <!-- TIÊU ĐỀ & LOGO CHỈ HIỆN KHI IN RA GIẤY -->
             <div class="hidden print:flex justify-between items-end border-b-2 border-slate-800 pb-4 mb-4 px-6 pt-6 bg-white">
                 <div>
@@ -951,6 +953,7 @@
                     </tbody>
                 </table>
             </div>
+	  </div>
         </div>
     </div>
 <!-- THÊM MỚI: BẢNG CHỌN NGÔN NGỮ KHI QUÉT MÃ QR -->
@@ -2226,9 +2229,20 @@ function selectAllSkills(forceCheck = false) {
     updateSelectedSkills();
 }
 
+        // --- THÊM MỚI: Hàm dọn dẹp và ẩn khung phân tích AI ---
+        function resetHeatmapAI() {
+            const aiBox = document.getElementById('heatmapAiSummary');
+            if (aiBox) {
+                aiBox.classList.add('hidden'); // Giấu khung AI đi
+                aiBox.innerHTML = ''; // Xóa sạch dữ liệu text và biểu đồ cũ
+            }
+        }
+
+        // Cập nhật lại hàm Đóng Modal
         function closeHeatmapModal(event) {
             if (!event || event.target === event.currentTarget) {
                 document.getElementById('heatmapModal').classList.add('hidden');
+                resetHeatmapAI(); // Dọn dẹp AI mỗi khi đóng bảng
             }
         }
 
