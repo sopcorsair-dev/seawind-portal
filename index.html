@@ -12,6 +12,9 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- THÊM MỚI: Thư viện Chart.js để vẽ biểu đồ năng lực -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- DÁN THÊM DÒNG NÀY VÀO: Thư viện SheetJS để xuất file Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 
     <!-- Cấu hình Tailwind tùy chỉnh để khớp với màu sắc thương hiệu -->
     <script>
@@ -294,7 +297,7 @@
                         <span data-vi="Nhập Liệu" data-en="Quick Entry">Nhập Liệu</span>
                     </div>
                 </button>
-				<!-- NÚT HƯỚNG DẪN SỬ DỤNG (MỚI THÊM) -->
+		<!-- NÚT HƯỚNG DẪN SỬ DỤNG (MỚI THÊM) -->
                 <button onclick="openIntroVideo()" class="flex items-center space-x-2 text-sm font-medium text-white bg-white/10 border border-white/20 px-3 py-2 rounded-lg hover:bg-white/20 transition-all backdrop-blur-md shadow-[0_0_10px_rgba(255,255,255,0.1)]" title="Xem lại video hướng dẫn">
                     <i data-lucide="play-circle" class="w-4 h-4 text-emerald-400 animate-pulse"></i>
                     <span class="hidden lg:inline" data-vi="Hướng Dẫn" data-en="Guide">Hướng Dẫn</span>
@@ -1266,6 +1269,9 @@
 <button id="btnBackupCloud" onclick="backupToCloud()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded flex items-center gap-2 transition border border-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.3)] ml-2">
     <i data-lucide="cloud-upload" class="w-3 h-3"></i> <span data-vi="Backup Lên Cloud" data-en="Cloud Backup">Backup Lên Cloud</span>
 </button>
+<button id="btnExportExcel" onclick="exportBackupToExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded flex items-center gap-2 transition border border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)] ml-2" title="Tải toàn bộ dữ liệu về máy dưới dạng file Excel">
+    <i data-lucide="file-spreadsheet" class="w-3 h-3"></i> <span data-vi="Tải Backup Excel" data-en="Download Excel">Tải Backup Excel</span>
+</button>
                     </div>
                     <textarea id="quickEntryCodeOutput" readonly class="flex-1 w-full bg-[#0d1117] text-[#c9d1d9] text-[11px] font-mono p-4 focus:outline-none resize-none code-scrollbar"></textarea>
                 </div>
@@ -1831,690 +1837,78 @@
             "MAST":     { vi: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=275b0d3f-fd88-4d10-bad0-50e4a9cb018d", en: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=c7102ba6-10ee-4848-8bee-5e3460cb6f07" },
             "REPAIR WI LIST":     { vi: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=a6b6ab70-0e1e-4c78-b698-7b0f87b28482" }
         };
+// Khởi tạo mảng rỗng, dữ liệu sẽ được bơm vào từ Google Sheets
+        // BẠN HÃY COPY TOÀN BỘ ĐOẠN MÃ NÀY VÀ DÁN ĐÈ LÊN MÃ CŨ (Thay thế các mảng dữ liệu)
 
-        let pdfFiles = [
-            { vi: "GWI-000 Hướng Dẫn Cơ Bản Về Sợi", en: "GWI-000-Basic Guide on Fibers", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=369c0d6c-5b86-4c9d-b915-f369ca78ec48" },
-            { vi: "GWI-001 Sơn Kỳ Hà", en: "GWI-001-Antifouling Paint Application", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=e10312b7-aef7-4624-93ee-b9904766700f" },
-            { vi: "GWI-002 Gắn Thiết Bị Mặt Boong ", en: "GWI-002 Deck Hardware Installation ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=28008ec3-a43e-4c70-b9b3-1ba577d16acf" },
-            { vi: "GWI-003 Sử Dụng Duralac ", en: "GWI-003-Duralac application ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=83f1a694-688f-4afa-829e-1e034bcf4a6b" },
-            { vi: "GWI-004 Lắp Đặt Tấm Trải Sàn ", en: "GWI-004-PVC flooring installation ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=d33ebc7f-e576-4936-b5fe-aca5d511dca7" },
-            { vi: "GWI-005 Sửa Chữa Gelcoat", en: "GWI-005- Gelcoat Repair", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=aedb74d1-5539-4679-a40e-f2b63f5916fd" },
-            { vi: "GWI-006 Dán Tấm Flexiteak", en: "GWI-006-Flexiteak panel installation", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=5a9fedf0-8c19-4215-af57-1d24ce707522" },
-            { vi: "GWI-007 Thi Công Sơn Bóng Cromax 625s", en: "GWI-007-Cromax Paint 625s Clear Application", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=ff322336-3903-40dc-b945-6d003d8d493c" },
-            { vi: "GWI-008 Lắp Đặt Hệ Thống Điều Khiển VC20", en: "GWI-008 VC20 Helm Control Installation", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=351e9ecf-b942-4a4a-8544-692c28b46205" },
-            { vi: "GWI-009 Sử Dụng Loctite ", en: "GWI-009-Loctite application ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=0b977f8d-36eb-4910-81cd-ad0ad5dc0d51" },
-            { vi: "GWI-010 Sử Dụng Silicone/Keo 1 Thành Phần", en: "GWI-010-Silicone-adhesion 1-part Application", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=e7970502-179a-4ce8-8657-44a9bb5b6998" },
-            { vi: "GWI-011 Đinh Vị Sơn Kỳ Hà  ", en: "GWI-011 Antifouling Leveling  ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=ce768b1e-34ee-410a-acac-cf74685ce3b0" },
-            { vi: "GWI-012 Lắp Dây Lan Can", en: "GWI-012 Lifeline Installation", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=40c8761c-0499-495c-a75d-36a36ee266a4" },
-            { vi: "GWI-013 Thi Công Sơn Lót Cromax 840R", en: "GWI-013-Cromax Paint 840R Primer Application", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=403790b4-d141-4a38-b656-159db63346db" },
-            { vi: "GWI-014 Thi Công Sơn Trắng Cromax I700  ", en: "GWI-014-Cromax Paint I700 White Application ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=0dcc0332-b51f-47b5-8ebf-e59508750575" },
-            { vi: "GWI-015 Khoan, Lã Đầu và Taro", en: "GWI-015 Drill, Countersink and Tap Procedure", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=d3c991f1-febd-4e2b-b1bd-2ec7181c78c0" },
-            { vi: "GWI-016 Dán Sợi Thứ Cấp", en: "GWI-016 Secondary Bonding Application", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=fc5920d9-fad6-41f2-ba44-ded8b127c87c" },
-            { vi: "GWI-017 Dán Kính Thủy Tinh", en: "GWI-017 Window Glass Bonding", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=6aa79336-f635-4fff-be8b-c112ffe655a6" },
-            { vi: "GWI-018 Lắp Chân Vịt Gori", en: "GWI-018 Gori Propeller Installation", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=32291aed-0b91-4429-ba36-fd08d017b250" },
-            { vi: "GWI-019 Lắp Dao Cắt Lưới Cho Chân Vịt Gori", en: "GWI-019-Shaft Shark Cutter Installation", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=ad9bee21-43a1-4e79-9430-16a2aa140870" },
-            { vi: "GWI-020 Gắn Lưới Chống Muỗi", en: "GWI-020 Mosquito Mesh Installation", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=a23fbe8a-8fb1-42c7-a31c-0904d17872c1" },
-            { vi: "GWI-021 Gắn Tấm Cao Su Vào Chân Máy", en: "GWI-021 Rubber Sheet on SD Installation", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=042d7c5e-0a49-4ab4-bf0f-431e830906b9" },
-            { vi: "GWI-022 Thi Công Sơn Propspeed", en: "GWI-022 Propspeed Paint Application", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=5b04a1d1-f5b4-4eca-9c6e-b23896875f7a" },
-            { vi: "GWI-023 Lắp Cửa Sổ Mở Lewmar", en: "GWI-023 Lewmar Flush Hatch Installation", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=48c02277-1231-4670-be82-88d1aabf70a7" },
-            { vi: "GWI-024 Lắp Nắp Thông Hơi Cửa Lewmar", en: "GWI-024 Lewmar Hatch Vent Installation", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=31809cb4-38ce-4676-a64f-bed685034a7d" },
-            { vi: "GWI-025 Hướng Dẫn Cơ Bản Về Đi Ống", en: "GWI-025-Basic Guide on Plumbing", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=6d259cbd-aca7-4ad3-93df-959d99318d18" },
-            { vi: "GWI-026 Hướng Dẫn Cơ Bản Về Đi Dây Điện", en: "GWI-026-Basic Guide to Electrical Wiring", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=6fb3a577-1f49-48a3-9734-65c412608247" },
-            { vi: "GWI-027 Hướng Dẫn Cơ Bản Về Gỗ Nội Thất", en: "GWI-027-Basic Guide on Interior Timber Work", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=1c6359de-1f06-46e5-bacd-d6b3b57b6fd9" },
-            { vi: "GWI-028 Lắp Thiết Bị Xuyên Thân", en: "GWI-028-Thru-hull Fitting Installation", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=f60b51c6-9554-433c-8370-20c24d0d78c6" },
-            { vi: "GWI-029 Lắp Đặt Màn Hình B&G ", en: "GWI-029 B&G Display Installation ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=c43327ec-2688-4d4c-b2d8-ea48d3ce9bab" },
-            { vi: "GWI-030 Tăng Dây Đai (Optibelt RB)", en: "GWI-030 Drive Belt Tension", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=0f6db8df-49bf-4ced-9cfe-a97ba7ad073f" },
-            { vi: "GWI-031 Bọc Báo Vệ Cửa Sổ Kính ", en: "GWI-031 Window Glass Protection ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=2e18355b-21bb-48a3-a4aa-94c863ddd2ac" },
-            { vi: "GWI-032 Loe Đầu Ống Đồng", en: "GWI-032 Brass Pipe Flaring Procedure", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=d3f1d1e3-1849-4564-96c8-fecc8f563816" },
-            { vi: "GWI-033 Kiểm Tra Rò Rỉ Hệ Thống Khí Ga", en: "GWI-033 Leaking Test of LPG-Gas System", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=029b726f-e0a4-44e6-9d4c-b5ba2de31f01" },
-            { vi: "GWI-034 Uốn Cong Ống", en: "GWI-034 Tube Bending", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=8590c569-c94d-467d-a92e-0bc0270a3088" },
-            { vi: "GWI-035 Lắp Đặt Máy Chenker Zen 100", en: "GWI-035 Water Maker Zen 100 Installation", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=bfe82782-4a9d-46fe-9c83-460d24f9d5e4" },
-            { vi: "GWI-036 Chạy Dây Máy Zen100 ", en: "GWI-036 Water Maker Zen100 Wiring ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=7aabeafd-55a9-4a70-82a7-de7253aacaf0" },
-            { vi: "GWI-037 Vệ Sinh và Súc Rửa Két Nước Ngọt (FRP)", en: "GWI-037 Cleaning & Disinfection FRP Fresh Water Tank", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=ab1fb024-e786-48ba-9068-6233b98b4c28" },
-            { vi: "GWI-038 Uốn Cong Cột Buồm ", en: "GWI-038 Mast Pre-bend ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=b8466da6-4e62-45ad-ba6c-4304a6df111e" },
-            { vi: "GWI-039 Lọc Sơ Bộ Nhiên Lyệu Trước Khi Nạp Két ", en: "GWI-039 Fuel Pre-Filtration Process before Tank Filling ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=c7342565-0562-4bad-8d85-afd661577b4b" },
-            { vi: "GWI-040 Xử Lý Vết Ố và Bảo Vệ Bề Mặt Inox ", en: "GWI-040-SS Surface Stain Treatment & Protection ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=f3e6a4c7-af10-4148-8bdd-366449de19de" },
-            { vi: "GWI-041 Dựng Cột Buồm ", en: "GWI-041 Mast Stepping ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=982e1e82-c22b-4fc5-8369-ea80999c1dc9" },
-            { vi: "GWI-042 Nối 2 Đoạn Cột Buồm  ", en: "GWI-042 Mast Section Jointing  ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=227a7d95-7001-4480-9b32-ee038c71e16d" },
-            { vi: "GWI-043 Lắp Bộ Xoay Lá Jib Của Harken Unit 3", en: "GWI-043 Harken Jib Furler Ocean Unit 3 Assembly", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=dc4def17-9e0e-4e0e-9918-605a050dbefd" },
-            { vi: "GWI-044 Chầu Mối Nối Dây Bện Đôi ", en: "GWI-044 Double Braid Eye Splice ", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=8c04a566-c9bd-467c-aa1b-2bcebe6888b1" },
-            { vi: "GWI-045 Quy Trình Cân Tàu Giai Đoạn Final", en: "GWI-045 Boat Weight Test Procedure at Final Stage", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=17d29e85-6494-4cff-82c3-eb8c7559ca54" },
-            { vi: "GWI-046 Quy Trình Lắp Bộ Xoay Lá JIB Của HARKEN UNIT 2", en: "GWI-046 Harken Jib Furler MKIV Unit 2 Assembly Procedure", path: "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=e4a0e5e0-b410-4cd6-80dd-51e753724c8a" },
-    {
-        "vi": "GWI-047- Thi Công Sơn Lót Cromax LE2004",
-        "en": "GWI-047-Cromax Paint LE2004 Primer Application",
-        "path": "https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=0eb4328d-480f-4816-b0f8-98e92353da10"
-    }
-        ];
+// Khởi tạo mảng, dữ liệu sẽ được bơm vào từ Google Sheets
+        let pdfFiles = [];
+        let allResources = [];
+        let tdsMsdsFiles = [];
+        let quizList = [];
+        let reportList = [];
+        let employeeList = [];
+        let adminActionLogs = [];
+        
+        // Mặc định tài khoản chống khóa cửa (Sẽ bị đè bởi dữ liệu trên Sheet sau khi load)
+        let adminAccounts = [];
 
-        let allResources = [
-            { type: 'image', name: 'GWI-000-Basic-Guide-on-Fibers', path: 'https://i.postimg.cc/hvyDByPM/GWI-000-Basic-Guide-on-Fibers-1.png' },
-            { type: 'image', name: 'GWI-002 Deck Hardware', path: 'https://i.postimg.cc/SRWjQHyz/GWI-002-Deck-Hardware.png' },
-            { type: 'image', name: 'GWI-003 Duralac Application', path: 'https://i.postimg.cc/C5YS75g2/GWI-003-Duralac-Application.png' },
-            { type: 'video', name: 'SW1370 Giới Thiệu/Intro', path: 'https://www.youtube.com/embed/qlPSjpLdDaU?si=C0TVaNZoXnTDSA4j', thumb: 'https://img.youtube.com/vi/qlPSjpLdDaU/0.jpg' },
-            { type: 'video', name: 'GWI 009 Loctite Application Procedure', path: 'https://www.youtube.com/embed/P6Ad6RZG8r8?si=hacQjVLsssd-K-Bu', thumb: 'https://img.youtube.com/vi/P6Ad6RZG8r8/0.jpg' },
-            { type: 'video', name: 'GWI-044 Double Braid Eye Splice Procedure', path: 'https://www.youtube.com/embed/XMjRm2wnlfQ?si=7WrBw0mFDtuuJJWk', thumb: 'https://img.youtube.com/vi/XMjRm2wnlfQ/0.jpg' },
-            { type: 'video', name: 'SW1370 - Thử bền/Strenght test', path: 'https://www.youtube.com/embed/ogcoFZXNnIY?si=izSvwqfIZaU70L2d', thumb: 'https://img.youtube.com/vi/ogcoFZXNnIY/0.jpg' },
-            { type: 'video', name: 'Loctite Application', path: 'https://www.youtube.com/embed/ozspq-DdAKw?si=knHHUmrYwBWJQ9dl', thumb: 'https://img.youtube.com/vi/ozspq-DdAKw/0.jpg' },
-            { type: 'image', name: 'GWI-009 Loctite Application', path: 'https://i.postimg.cc/YCQ5NDBH/GWI-009-Loctite-Application.png' },
-            { type: 'image', name: 'GWI-010 Silicone Adhesive-1 part Application', path: 'https://i.postimg.cc/gkKHbNSk/GWI-010-Silicone-adhesion-1part-Application.png' },
-            { type: 'image', name: 'GWI-015 Drill countersink and Tap', path: 'https://i.postimg.cc/sxCYT1Bq/GWI-015-Drill-countersink-and-Tap.png' }
-        ];
+        // API SheetDB của bạn
+        const SHEETDB_API = "https://sheetdb.io/api/v1/g2hoo34628est"; 
 
-        let tdsMsdsFiles = [
-            { vi: "Nhựa Poly 125 PA #13994 - TDS", en: "Polyester Resin 125 PA #13994 - TDS", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQBOGKdt1cTgRIqd_h6GYpcIAQl2FAY36bSEsEDFR9-qfb4?e=YhjX6u", category: "resin", type: "TDS" },
-            { vi: "Keo Crestafix 621CC #LC-5846 - TDS", en: "Crestafix 621 CC Adhesive #LC-5846 - TDS", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQBnKx17NCEHSY8i-iI56NtxAf6v3wWqUSLnEWfshB5954M?e=7Qscgj", category: "resin", type: "TDS" },
-            { vi: "Nhựa Vina VE679 PA #10852 - TDS", en: "Vinylester Resin VE679 PA #10852 - TDS", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQDpcP8T3amBTqKfo6g9fBqAAXqhJe2vWXEKyF5u9_Y-9-U?e=eRWn8s", category: "resin", type: "TDS" },
-            { vi: "Poly-Fair F24 VE - TDS", en: "Poly-Fair F24 VE - TDS", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQCEDcQYC2clRYQmBlsba8NiAVBH6eVcTvpnG0BBu0OBC2E?e=KYXNeH", category: "resin", type: "TDS" },
-            { vi: "Chất Đánh Bóng Aqua Buff - TDS", en: "Aqua Buff Compounds and Polish - TDS", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQC-SxRO64KEQb4LLWxHcy4pAXa4Rtr5XtzvcJ_jeNABgUw?e=4pezfY", category: "resin", type: "TDS" },
-            { vi: "Butanox M50 - TDS", en: "Butanox M50 - TDS", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQBbtRxYeU3CRYTfQLM4rOKTATcJJhRRvRsmaYiE7Elcox0?e=zaLauv", category: "resin", type: "TDS" },
-            { vi: "Keo dán 3M 4000 UV - TDS", en: "3M 4000 UV Adhesive - TDS", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQBPFfyTJyBKRLCzDLj993k-AbUZdKY-s_fk5IyfQ3AuDFY?e=Zvm0LX", category: "adhesive", type: "TDS" },
-            { vi: "Butanox M50 - MSDS", en: "Butanox M50 - MSDS", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQBFIfnzkL67TquYiVrX2-JbASOKTJSMhj3xCNSPx3oEJI0?e=YsXYJI", category: "resin", type: "MSDS" },
-            { vi: "Keo Fixtech Fix8 - TDS", en: "Fixtech Fix8 Adhesive - TDS", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQCccr2VPNXQSLBAJDdSzaI0AUn2opF7jhDCRfHtx35O1Ic?e=eNmOoI", category: "adhesive", type: "TDS" },
-            { vi: "Hợp chất chống ăn mòn Duralac - TDS", en: "Duralac Jointing Compound - TDS", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQCKunC7Gf3pTYjbGHmYxIjWAfyv7IwzgaCT5JoM2U21KNI?e=e592SF", category: "Loctite/Duralac", type: "TDS" },
-            { vi: "Keo Sikaflex 295 UV - TDS", en: "Sikaflex 295 UV Adhesive - TDS", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQAbQ1lpupvGRbKLIpHh5hVSAdDaS-bc5xZOINf84Vnxqu4?e=g6fvGX", category: "adhesive", type: "TDS" },
-            { vi: "Sơn trắng lót AY&B Epoxy - MSDS", en: "AY&B Epoxy Primer  NZ- MSDS", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQD8fwdTuBrqToNOJVb5StD9AV8xwOQpgHbCNXTMe3Anazc?e=MtOr3R", category: "gelcoat", type: "MSDS" },
-            { vi: "Loctite 243 - TDS", en: "Loctite 243 - TDS", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQDYFFCVV0dwTKPU0oNAy-q5AVmcVdHHvp5kNdHOkNj5ZAo?e=8edX5C", category: "Loctite/Duralac", type: "TDS" },
-            { vi: "Hướng Dẫn Gelcoat", en: "Gelcoat Handling Guide", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQDGwNyFm9sCRLmHKN-hBgzrAXpvn5TryqcqFTCnLWLtKYk?e=fiUmf1", category: "Guide", type: "Guide" },
-            { vi: "Hướng Dẫn Sơn Súng Gelcoat", en: "Spray Gelcoat Guidelines", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQAzIEwdeSsjRY9W594phg0fAUt6ww6z3Rs3E2uKg4A1Q4Y?e=SYLZ27", category: "Guide", type: "Guide" },
-            { vi: "Hướng Dẫn Chất Lượng Gelcoat", en: "Gelcoat Quality Guide", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQB2tB5CIpg9TK-eaB9oc-AHAQASNuCGVFmGj1j9VXZBX1g?e=cAI3rQ", category: "Guide", type: "Guide" },
-            { vi: "Sơn chống hà AY&B No.5 - TDS", en: "AY&B No.5 Antifouling - TDS", path: "https://corsairmarinevn-my.sharepoint.com/:b:/g/personal/phuc_le_thai_corsairmarine_com/IQAsX7ZGzqCuT6Xf9Q9v2IEEAYUS9sKXMNikkjWS69KhpCs?e=CaOehT", category: "gelcoat", type: "TDS" }
-        ];
+        // Hàm ĐỌC dữ liệu từ Google Sheets
+        async function fetchDatabaseFromCloud() {
+            try {
+                const response = await fetch(`${SHEETDB_API}?sheet=DB&t=${new Date().getTime()}`);
+                const data = await response.json();
+                
+                if (data && data.length > 0 && data[0].id == "1") {
+                    const db = data[0]; 
+                    
+                    const safeParse = (jsonStr, fallbackData) => {
+                        try { 
+                            const parsed = jsonStr ? JSON.parse(jsonStr) : null; 
+                            return (parsed && parsed.length > 0) ? parsed : fallbackData;
+                        } 
+                        catch(e) { return fallbackData; }
+                    };
 
-        let quizList = [
-            { vi: "GWI-000 Quiz", en: "GWI-000 Quiz", path: "https://notebooklm.google.com/notebook/5b095fe7-58b1-483b-8851-3187dacc4f4d/artifact/7a627ead-58da-4c9b-beda-815340e8c2c8" },
-            { vi: "GWI-001 Quiz", en: "GWI-001 Quiz", path: "https://notebooklm.google.com/notebook/5b095fe7-58b1-483b-8851-3187dacc4f4d/artifact/469bc239-1539-4b78-b52d-2cf9ef471373" },
-            { vi: "GWI-002 Quiz", en: "GWI-002 Quiz", path: "https://notebooklm.google.com/notebook/5b095fe7-58b1-483b-8851-3187dacc4f4d/artifact/74e49be1-6d4b-4cda-96a5-32870973d765" },
-            { vi: "GWI-003 Quiz", en: "GWI-003 Quiz", path: "https://notebooklm.google.com/notebook/5b095fe7-58b1-483b-8851-3187dacc4f4d/artifact/19b9319f-9af8-41fa-9783-ca5ebb88b30d" }
-        ];
+                    pdfFiles = safeParse(db.pdfFiles, pdfFiles);
+                    allResources = safeParse(db.allResources, allResources);
+                    tdsMsdsFiles = safeParse(db.tdsMsdsFiles, tdsMsdsFiles);
+                    quizList = safeParse(db.quizList, quizList);
+                    reportList = safeParse(db.reportList, reportList);
+                    employeeList = safeParse(db.employeeList, employeeList);
+                    adminActionLogs = safeParse(db.adminActionLogs, adminActionLogs);
+                    
+                    // Thêm phần đọc Tài khoản quản trị
+                    adminAccounts = safeParse(db.adminAccounts, adminAccounts);
+                }
+            } catch (error) {
+                console.error("Lỗi đồng bộ dữ liệu:", error);
+            }
+        }
 
-        let reportList = [
-            { name: "Report GWI-000", path: "https://i.postimg.cc/tRsGhy3j/Report-1-GWI-000.png" },
-            { name: "Report GWI-001", path: "https://i.postimg.cc/tRsGhy3j/Report-1-GWI-000.png" },
-            { name: "Report GWI-002", path: "https://i.postimg.cc/tRsGhy3j/Report-1-GWI-000.png" }
-        ];
+        // Hàm GHI/CẬP NHẬT dữ liệu lên Google Sheets
+        async function syncDatabaseToCloud() {
+            const payload = {
+                pdfFiles: JSON.stringify(pdfFiles),
+                allResources: JSON.stringify(allResources),
+                tdsMsdsFiles: JSON.stringify(tdsMsdsFiles),
+                quizList: JSON.stringify(quizList),
+                reportList: JSON.stringify(reportList),
+                employeeList: JSON.stringify(employeeList),
+                adminActionLogs: JSON.stringify(adminActionLogs),
+                // Bơm danh sách tài khoản lên Sheet
+                adminAccounts: JSON.stringify(adminAccounts) 
+            };
 
-        let employeeList = [
-            {
-        "name": "Nguyễn Văn A",
-        "empId": "2456",
-        "year": "2023-06-11",
-        "department": "Fit Out 1",
-        "line": "Line 1270 - Mr Nhan",
-        "lamination": {
-            "theory": 8,
-            "practice": 9
-        },
-        "lamDate": "2026-05-14",
-        "gelcoat": "N/A",
-        "gelDate": "",
-        "bonding": {
-            "theory": 8,
-            "practice": 8
-        },
-        "bonDate": "2026-04-09",
-        "assembly": {
-            "theory": 9,
-            "practice": 9
-        },
-        "assDate": "2026-02-05",
-        "fitout": {
-            "theory": 4,
-            "practice": 7
-        },
-        "fitDate": "2026-01-15",
-        "timber": "N/A",
-        "timDate": "",
-        "plumbing": "N/A",
-        "pluDate": "",
-        "fabric": "N/A",
-        "fabDate": "",
-        "maintenance": "N/A",
-        "maiDate": "",
-        "customSkills": [
-            {
-                "label": "Window Installation",
-                "val": {
-                    "theory": 8,
-                    "practice": 9
-                },
-                "date": "2025-12-25"
-            }
-        ],
-        "avatar": "https://ui-avatars.com/api/?name=Nguy%E1%BB%85n%20V%C4%83n%20A&background=random&color=fff&size=120&bold=true",
-        "history": [
-            {
-                "date": "14/05/2026",
-                "courseVi": "Đánh giá Lamination",
-                "courseEn": "Lamination Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "09/04/2026",
-                "courseVi": "Đánh giá Bonding",
-                "courseEn": "Bonding Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "05/02/2026",
-                "courseVi": "Đánh giá Assembly",
-                "courseEn": "Assembly Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "15/01/2026",
-                "courseVi": "Đánh giá FitOut",
-                "courseEn": "FitOut Assessment",
-                "result": "FAIL"
-            },
-            {
-                "date": "25/12/2025",
-                "courseVi": "Đánh giá Window Installation",
-                "courseEn": "Window Installation Assessment",
-                "result": "PASS"
-            }
-        ]
-    },
-    {
-        "name": "Lê Thị B",
-        "empId": "1234",
-        "year": "2023-07-10",
-        "department": "ASS 2",
-        "line": "Line 1600 - Mr Pete",
-        "lamination": {
-            "theory": 8,
-            "practice": 8
-        },
-        "lamDate": "2024-05-20",
-        "gelcoat": {
-            "theory": 4,
-            "practice": 4
-        },
-        "gelDate": "",
-        "bonding": "N/A",
-        "bonDate": "",
-        "assembly": {
-            "theory": 4,
-            "practice": 4
-        },
-        "assDate": "",
-        "fitout": {
-            "theory": 8,
-            "practice": 8
-        },
-        "fitDate": "2024-05-25",
-        "timber": "N/A",
-        "timDate": "",
-        "plumbing": {
-            "theory": 8,
-            "practice": 8
-        },
-        "pluDate": "2024-02-15",
-        "fabric": {
-            "theory": 4,
-            "practice": 4
-        },
-        "fabDate": "",
-        "maintenance": {
-            "theory": 8,
-            "practice": 8
-        },
-        "maiDate": "2024-06-01",
-        "customSkills": [
-            {
-                "label": "CNC Operator",
-                "val": {
-                    "theory": 8,
-                    "practice": 8
-                },
-                "date": "2024-03-10"
-            }
-        ],
-        "avatar": "https://ui-avatars.com/api/?name=L%C3%AA%20Th%E1%BB%8B%20B&background=random&color=fff&size=120&bold=true",
-        "history": [
-            {
-                "date": "20/05/2024",
-                "courseVi": "Đánh giá Lamination",
-                "courseEn": "Lamination Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "N/A",
-                "courseVi": "Đánh giá Gelcoat",
-                "courseEn": "Gelcoat Assessment",
-                "result": "FAIL"
-            },
-            {
-                "date": "N/A",
-                "courseVi": "Đánh giá Assembly",
-                "courseEn": "Assembly Assessment",
-                "result": "FAIL"
-            },
-            {
-                "date": "25/05/2024",
-                "courseVi": "Đánh giá FitOut",
-                "courseEn": "FitOut Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "15/02/2024",
-                "courseVi": "Đánh giá Plumbing",
-                "courseEn": "Plumbing Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "N/A",
-                "courseVi": "Đánh giá Fabric",
-                "courseEn": "Fabric Assessment",
-                "result": "FAIL"
-            },
-            {
-                "date": "01/06/2024",
-                "courseVi": "Đánh giá Maintenance",
-                "courseEn": "Maintenance Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "10/03/2024",
-                "courseVi": "Đánh giá CNC Operator",
-                "courseEn": "CNC Operator Assessment",
-                "result": "PASS"
-            }
-        ]
-    },
-    {
-        "name": "Bành Thị X",
-        "empId": "2233",
-        "year": "2025-06-04",
-        "department": "Fit Out 2",
-        "line": "Line 1160XL - Mr Manh",
-        "lamination": "PASS",
-        "lamDate": "2026-06-04",
-        "gelcoat": "PASS",
-        "gelDate": "2026-06-04",
-        "bonding": "PASS",
-        "bonDate": "2026-05-21",
-        "assembly": "N/A",
-        "assDate": "",
-        "fitout": "N/A",
-        "fitDate": "",
-        "timber": "N/A",
-        "timDate": "",
-        "plumbing": "N/A",
-        "pluDate": "",
-        "fabric": "PASS",
-        "fabDate": "2026-05-21",
-        "maintenance": "N/A",
-        "maiDate": "",
-        "customSkills": [],
-        "avatar": "https://ui-avatars.com/api/?name=B%C3%A0nh%20Th%E1%BB%8B%20X&background=random&color=fff&size=120&bold=true",
-        "history": [
-            {
-                "date": "04/06/2026",
-                "courseVi": "Đánh giá Lamination",
-                "courseEn": "Lamination Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "04/06/2026",
-                "courseVi": "Đánh giá Gelcoat",
-                "courseEn": "Gelcoat Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "21/05/2026",
-                "courseVi": "Đánh giá Bonding",
-                "courseEn": "Bonding Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "21/05/2026",
-                "courseVi": "Đánh giá Fabric",
-                "courseEn": "Fabric Assessment",
-                "result": "PASS"
-            }
-        ]
-    },
-    {
-        "name": "Trần Văn C",
-        "empId": "2311",
-        "year": "2025-03-10",
-        "department": "Fit Out 2",
-        "line": "Line 1160XL - Mr Manh",
-        "lamination": {
-            "theory": 8,
-            "practice": 8
-        },
-        "lamDate": "2026-05-08",
-        "gelcoat": {
-            "theory": 8,
-            "practice": 8
-        },
-        "gelDate": "2026-06-02",
-        "bonding": {
-            "theory": 8,
-            "practice": 8
-        },
-        "bonDate": "2026-06-04",
-        "assembly": "N/A",
-        "assDate": "",
-        "fitout": "N/A",
-        "fitDate": "",
-        "timber": "N/A",
-        "timDate": "",
-        "plumbing": "N/A",
-        "pluDate": "",
-        "fabric": "N/A",
-        "fabDate": "",
-        "maintenance": {
-            "theory": 8,
-            "practice": 8
-        },
-        "maiDate": "2026-05-20",
-        "customSkills": [],
-        "avatar": "https://ui-avatars.com/api/?name=Tr%E1%BA%A7n%20V%C4%83n%20C&background=random&color=fff&size=120&bold=true",
-        "history": [
-            {
-                "date": "08/05/2026",
-                "courseVi": "Đánh giá Lamination",
-                "courseEn": "Lamination Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "02/06/2026",
-                "courseVi": "Đánh giá Gelcoat",
-                "courseEn": "Gelcoat Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "04/06/2026",
-                "courseVi": "Đánh giá Bonding",
-                "courseEn": "Bonding Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "20/05/2026",
-                "courseVi": "Đánh giá Maintenance",
-                "courseEn": "Maintenance Assessment",
-                "result": "PASS"
-            }
-        ]
-    },
-    {
-        "name": "Đặng Văn U",
-        "empId": "0395",
-        "year": "2024-07-10",
-        "department": "ASS 1",
-        "line": "Trimaran - Mr Ly",
-        "lamination": {
-            "theory": 7,
-            "practice": 8
-        },
-        "lamDate": "2026-01-08",
-        "gelcoat": {
-            "theory": 6,
-            "practice": 9
-        },
-        "gelDate": "2025-12-12",
-        "bonding": {
-            "theory": 6,
-            "practice": 4
-        },
-        "bonDate": "2026-01-23",
-        "assembly": {
-            "theory": 7,
-            "practice": 9
-        },
-        "assDate": "2025-12-26",
-        "fitout": {
-            "theory": 8,
-            "practice": 5
-        },
-        "fitDate": "2026-03-06",
-        "timber": "N/A",
-        "timDate": "",
-        "plumbing": "N/A",
-        "pluDate": "",
-        "fabric": "N/A",
-        "fabDate": "",
-        "maintenance": "N/A",
-        "maiDate": "",
-        "customSkills": [
-            {
-                "label": "Boat Level",
-                "val": {
-                    "theory": 8,
-                    "practice": 8
-                },
-                "date": "2026-05-20"
-            }
-        ],
-        "avatar": "https://ui-avatars.com/api/?name=%C4%90%E1%BA%B7ng%20V%C4%83n%20U&background=random&color=fff&size=120&bold=true",
-        "history": [
-            {
-                "date": "08/01/2026",
-                "courseVi": "Đánh giá Lamination",
-                "courseEn": "Lamination Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "12/12/2025",
-                "courseVi": "Đánh giá Gelcoat",
-                "courseEn": "Gelcoat Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "23/01/2026",
-                "courseVi": "Đánh giá Bonding",
-                "courseEn": "Bonding Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "26/12/2025",
-                "courseVi": "Đánh giá Assembly",
-                "courseEn": "Assembly Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "06/03/2026",
-                "courseVi": "Đánh giá FitOut",
-                "courseEn": "FitOut Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "20/05/2026",
-                "courseVi": "Đánh giá Boat Level",
-                "courseEn": "Boat Level Assessment",
-                "result": "PASS"
-                 }
-        ]
-    },
-    {
-        "name": "Trần Văn P",
-        "empId": "987",
-        "year": "2023-07-12",
-        "department": "Lamination",
-        "line": "Lamination - Mr Danny",
-        "lamination": {
-            "theory": 8,
-            "practice": 9
-        },
-        "lamDate": "2026-04-10",
-        "gelcoat": {
-            "theory": 8,
-            "practice": 8
-        },
-        "gelDate": "2026-02-06",
-        "bonding": {
-            "theory": 7,
-            "practice": 9
-        },
-        "bonDate": "2026-01-10",
-        "assembly": "N/A",
-        "assDate": "",
-        "fitout": "N/A",
-        "fitDate": "",
-        "timber": "N/A",
-        "timDate": "",
-        "plumbing": "N/A",
-        "pluDate": "",
-        "fabric": "N/A",
-        "fabDate": "",
-        "maintenance": "N/A",
-        "maiDate": "",
-        "customSkills": [],
-        "avatar": "https://ui-avatars.com/api/?name=Tr%E1%BA%A7n%20V%C4%83n%20P&background=random&color=fff&size=120&bold=true",
-        "history": [
-            {
-                "date": "10/04/2026",
-                "courseVi": "Đánh giá Lamination",
-                "courseEn": "Lamination Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "06/02/2026",
-                "courseVi": "Đánh giá Gelcoat",
-                "courseEn": "Gelcoat Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "10/01/2026",
-                "courseVi": "Đánh giá Bonding",
-                "courseEn": "Bonding Assessment",
-                "result": "PASS"
-            }
-        ]
-    },
-    {
-        "name": "Lê Thị Z",
-        "empId": "1254",
-        "year": "2025-07-12",
-        "department": "Timber",
-        "line": "Timber - Mr Kevin",
-        "lamination": "N/A",
-        "lamDate": "",
-        "gelcoat": "N/A",
-        "gelDate": "",
-        "bonding": "N/A",
-        "bonDate": "",
-        "assembly": "N/A",
-        "assDate": "",
-        "fitout": {
-            "theory": 5,
-            "practice": 7
-        },
-        "fitDate": "2026-04-10",
-        "timber": {
-            "theory": 8,
-            "practice": 8
-        },
-        "timDate": "2026-03-06",
-        "plumbing": "N/A",
-        "pluDate": "",
-        "fabric": {
-            "theory": 7,
-            "practice": 9
-        },
-        "fabDate": "2026-06-05",
-        "maintenance": "N/A",
-        "maiDate": "",
-        "customSkills": [],
-        "avatar": "https://ui-avatars.com/api/?name=L%C3%AA%20Th%E1%BB%8B%20Z&background=random&color=fff&size=120&bold=true",
-        "history": [
-            {
-                "date": "10/04/2026",
-                "courseVi": "Đánh giá FitOut",
-                "courseEn": "FitOut Assessment",
-                "result": "FAIL"
-            },
-            {
-                "date": "06/03/2026",
-                "courseVi": "Đánh giá Timber",
-                "courseEn": "Timber Assessment",
-                "result": "PASS"
-            },
-            {
-                "date": "05/06/2026",
-                "courseVi": "Đánh giá Fabric",
-                "courseEn": "Fabric Assessment",
-                "result": "PASS"
-            }
-        ]
-    },
-    {
-        "name": "Phan Văn H",
-        "empId": "678",
-        "year": "2026-05-07",
-        "department": "Lamination",
-        "line": "Lamination - Mr Danny",
-        "lamination": {
-            "theory": 7,
-            "practice": 8
-        },
-        "lamDate": "2026-06-04",
-        "gelcoat": {
-            "theory": 4,
-            "practice": 7
-        },
-        "gelDate": "2026-05-07",
-        "bonding": {
-            "theory": 5,
-            "practice": 8
-        },
-        "bonDate": "2026-03-18",
-        "assembly": "N/A",
-        "assDate": "",
-        "fitout": "N/A",
-        "fitDate": "",
-        "timber": "N/A",
-        "timDate": "",
-        "plumbing": "N/A",
-        "pluDate": "",
-        "fabric": "N/A",
-        "fabDate": "",
-        "maintenance": "N/A",
-        "maiDate": "",
-        "customSkills": [],
-        "avatar": "https://ui-avatars.com/api/?name=Phan%20V%C4%83n%20H&background=random&color=fff&size=120&bold=true",
-        "history": [
-            {
-                "date": "04/06/2026",
-                "courseVi": "Đánh giá Lamination",
-                "courseEn": "Lamination Assessment",
-                "result": "ASSISTANT"
-            },
-            {
-                "date": "07/05/2026",
-                "courseVi": "Đánh giá Gelcoat",
-                "courseEn": "Gelcoat Assessment",
-                "result": "ASSISTANT"
-            },
-            {
-                "date": "18/03/2026",
-                "courseVi": "Đánh giá Bonding",
-                "courseEn": "Bonding Assessment",
-                "result": "ASSISTANT"
-            }
-        ]
-    }
-];
-
-let adminActionLogs = [
-    {
-        "time": "13/06/2026 18:37",
-        "timestamp": 1781350662249,
-        "action": "CẬP NHẬT",
-        "module": "EMPLOYEE",
-        "item": "Phan Văn H"
-    },
-    {
-        "time": "13/06/2026 18:34",
-        "timestamp": 1781350460222,
-        "action": "THÊM MỚI",
-        "module": "EMPLOYEE",
-        "item": "Phan Văn H"
-    }
-];
+            const response = await fetch(`${SHEETDB_API}/id/1?sheet=DB`, {
+                method: 'PUT',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: payload })
+            });
+            const result = await response.json();
+        }
 
         let currentLang = 'vi';
         let selectedTdsCategory = 'all';
@@ -3806,45 +3200,48 @@ function analyzeHeatmapAI() {
             const id = document.getElementById('adminId').value;
             const pass = document.getElementById('adminPass').value;
             
-            // Lấy thời gian hiện tại để ghi Log
             const now = new Date();
             const timeStr = `${("0"+now.getDate()).slice(-2)}/${("0"+(now.getMonth()+1)).slice(-2)}/${now.getFullYear()} ${("0"+now.getHours()).slice(-2)}:${("0"+now.getMinutes()).slice(-2)}`;
             
             let isSuccess = false;
             let accountRole = "";
+            let accountName = "";
 
             // ==============================================================
-            // BỘ LỌC PHÂN QUYỀN: KIỂM TRA TÀI KHOẢN DỰA THEO MỤC ĐÍCH
+            // BỘ LỌC PHÂN QUYỀN ĐỘNG (KÉO TỪ GOOGLE SHEETS)
             // ==============================================================
             
-            if (loginTarget === 'factory-toggle') {
-                // 1. TÀI KHOẢN ĐỂ TẮT CHẾ ĐỘ XƯỞNG (Dành cho Line Manager)
-                // Bạn có thể đổi 'manager' và '123456' thành ID/Pass mong muốn
-                if ( (id === 'seawind' && pass === '123456') || 
-                     (id === 'manager' && pass === '654321') ||
-                     (id === 'james' && pass === '111222') ) {
- 
+            // Tìm xem ID và Pass có khớp với dữ liệu trên Sheet không
+            const foundAccount = adminAccounts.find(acc => acc.id === id && acc.pass === pass);
+
+            if (foundAccount) {
+                if (loginTarget === 'factory-toggle') {
+                    // Cả admin và manager đều được tắt màn hình xưởng
                     isSuccess = true;
-                    accountRole = "Manager";
+                    accountRole = foundAccount.role;
+                    accountName = foundAccount.name;
                     
-                    // --- THÊM MỚI: LƯU QUYỀN KÈM THEO NGÀY ĐĂNG NHẬP HIỆN TẠI ---
-                    const todayStr = new Date().toLocaleDateString('en-GB'); // Sinh ra chuỗi VD: 16/06/2026
+                    const todayStr = new Date().toLocaleDateString('en-GB'); 
                     localStorage.setItem('isFactoryMgrAuthed', 'true'); 
                     localStorage.setItem('factoryAuthDate', todayStr);
-                    // ------------------------------------------------------------
                     
                     closeAdminLoginModal();
                     executeToggleFactory();
-                }
-            } 
-            else if (loginTarget === 'data-entry') {
-                // 2. TÀI KHOẢN ĐỂ VÀO QUẢN TRỊ DỮ LIỆU (Dành cho Bạn - Super Admin)
-                if (id === 'phuclt' && pass === '0398647091') { 
-                    isSuccess = true;
-                    accountRole = "Admin Dữ Liệu";
-                    sessionStorage.setItem('isAdminAuthed', 'true'); // Cấp quyền tối cao
-                    closeAdminLoginModal();
-                    openQuickEntryModal(); 
+                } 
+                else if (loginTarget === 'data-entry') {
+                    // Chỉ role 'admin' mới được vào khu vực Nhập Liệu
+                    if (foundAccount.role === 'admin') {
+                        isSuccess = true;
+                        accountRole = foundAccount.role;
+                        accountName = foundAccount.name;
+                        
+                        sessionStorage.setItem('isAdminAuthed', 'true');
+                        closeAdminLoginModal();
+                        openQuickEntryModal(); 
+                    } else {
+                        alert(currentLang === 'vi' ? 'Tài khoản của bạn không có quyền Quản trị dữ liệu!' : 'Admin privilege required!');
+                        return; // Ngăn không cho chạy tiếp
+                    }
                 }
             }
 
@@ -3852,19 +3249,15 @@ function analyzeHeatmapAI() {
             // HỆ THỐNG CẢNH BÁO / GHI LOG
             // ==============================================================
             if (isSuccess) {
-                // Bắn thông báo Đăng nhập thành công
                 sendSystemLogAlert({
-                    time: timeStr, action: 'ĐĂNG NHẬP', module: 'BẢO MẬT', item: `Tài khoản: ${id} (${accountRole})`,
+                    time: timeStr, action: 'ĐĂNG NHẬP', module: 'BẢO MẬT', item: `Tài khoản: ${id} (${accountName})`,
                     details: { 
                         vi: `Đăng nhập thành công vào mục đích: ${loginTarget === 'factory-toggle' ? 'Tắt màn hình xưởng' : 'Quản trị Dữ liệu'}`, 
                         en: `Login success for: ${loginTarget}` 
                     }
                 });
             } else {
-                // Hiện cảnh báo đỏ trên form
                 document.getElementById('loginError').classList.remove('hidden');
-                
-                // Bắn thông báo Sai mật khẩu về Telegram/Email
                 sendSystemLogAlert({
                     time: timeStr, action: 'CẢNH BÁO', module: 'BẢO MẬT', item: `Tài khoản: ${id}`,
                     details: { 
@@ -4161,6 +3554,7 @@ skills.forEach(s => {
                 actionEn = "REGISTER REQUEST"; 
                 moduleEn = "SECURITY"; 
                 itemEn = itemEn.replace("Tên:", "Name:"); 
+
             }
             else if (logData.action.includes('CẢNH BÁO')) { 
                 alertTitle = "⛔ SECURITY BREACH ALERT"; actionEn = "LOGIN FAILED"; moduleEn = "SECURITY"; 
@@ -4220,7 +3614,7 @@ skills.forEach(s => {
                 }).catch(e => console.log("Lỗi Telegram:", e));
             }
         }
-        function submitQuickEntry() {
+        async function submitQuickEntry() {
             if (currentActionMode !== 'add' && currentSelectedIndex === -1) {
                 alert(currentLang === 'vi' ? "Vui lòng chọn một mục từ danh sách!" : "Please select an item from the list!");
                 return;
@@ -4503,28 +3897,47 @@ newItemObj = {
                 details: detailsLog 
             });
 
-            // ========================================================
-            // THÊM DÒNG NÀY: Kích hoạt hệ thống bắn thông báo ra bên ngoài
-            // Lấy chính xác phần tử Log vừa được tạo ra ở trên (adminActionLogs[0])
+            // Gửi Telegram cảnh báo
             sendSystemLogAlert(adminActionLogs[0]);
-            // ========================================================
 
-            // --- KẾT THÚC GHI NHẬN LỊCH SỬ ---           
+            // ===============================================
+            // THÊM: ĐẨY DỮ LIỆU LÊN GOOGLE SHEETS
+            // ===============================================
+            const submitBtn = document.getElementById('submit-qe-btn');
+            const originalHtml = submitBtn.innerHTML;
+            submitBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Đang lưu lên Cloud...`;
+            submitBtn.disabled = true;
+            lucide.createIcons();
 
-            // Các hàm cũ giữ nguyên
-            renderEmployeeList();
-            updateAnnouncement();
-            initNotifications();
-            updateRetrainAlerts();
-            generateAdminCode(); // Generate lại code để lưu luôn biến lịch sử
-            
-            if (currentActionMode !== 'add') {
-                populateItemDropdown();
-            } else {
-                clearQuickEntryForm();
+            try {
+                // Gọi hàm lưu dữ liệu lên tab DB
+                await syncDatabaseToCloud();
+                
+                // Render lại toàn bộ giao diện
+                renderList(pdfFiles);
+                filterTdsMsds();
+                renderMediaUI();
+                renderQuizList();
+                renderReportList();
+                renderEmployeeList();
+                updateAnnouncement();
+                initNotifications();
+                updateRetrainAlerts();
+                
+                if (currentActionMode !== 'add') {
+                    populateItemDropdown();
+                } else {
+                    clearQuickEntryForm();
+                }
+                
+                alert(successMsg + (currentLang === 'vi' ? " Đã đồng bộ lên máy chủ." : " Synced to cloud."));
+            } catch (error) {
+                alert(currentLang === 'vi' ? "Lưu máy chủ thất bại, nhưng đã lưu trên máy hiện tại!" : "Cloud sync failed!");
+            } finally {
+                submitBtn.innerHTML = originalHtml;
+                submitBtn.disabled = false;
+                lucide.createIcons();
             }
-            
-            alert(successMsg);
         }
 
         function generateAdminCode() {
@@ -4562,70 +3975,157 @@ let adminActionLogs = ${JSON.stringify(adminActionLogs, null, 4)};
             modal.classList.remove('hidden');
         }
 // ==========================================
-        // TÍNH NĂNG BACKUP DỮ LIỆU LÊN CLOUD (GOOGLE SHEETS)
+        // TÍNH NĂNG TẢI DỮ LIỆU THÀNH FILE EXCEL VỀ MÁY
         // ==========================================
-        function backupToCloud() {
-            // 1. Lấy toàn bộ nội dung code đã sinh ra
-            const textarea = document.getElementById('quickEntryCodeOutput');
-            const codeContent = textarea.value.trim();
-
-            if (!codeContent) {
-                alert(currentLang === 'vi' ? 'Không có dữ liệu để backup. Vui lòng nhập liệu trước!' : 'No data to backup!');
+        function exportBackupToExcel() {
+            // Kiểm tra xem thư viện đã load thành công chưa
+            if (typeof XLSX === 'undefined') {
+                alert(currentLang === 'vi' ? "Thư viện Excel chưa được tải. Vui lòng kiểm tra mạng!" : "Excel library not loaded. Check network!");
                 return;
             }
 
-            // 2. Hiển thị hiệu ứng xoay xoay đang tải
+            // Đổi giao diện nút thành đang tải
+            const btn = document.getElementById('btnExportExcel');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> <span data-vi="Đang tạo file..." data-en="Generating...">Đang tạo file...</span>`;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+
+            setTimeout(() => {
+                try {
+                    // Tạo một Workbook (File Excel) mới
+                    const wb = XLSX.utils.book_new();
+
+                    // 1. XỬ LÝ SHEET NHÂN SỰ
+                    // --- BƯỚC THÊM: Quét tìm tất cả các Kỹ năng tùy biến đang có trong toàn xưởng ---
+                    let allCustomSkills = [];
+                    employeeList.forEach(emp => {
+                        if (emp.customSkills && Array.isArray(emp.customSkills)) {
+                            emp.customSkills.forEach(cs => {
+                                if (!allCustomSkills.includes(cs.label)) {
+                                    allCustomSkills.push(cs.label);
+                                }
+                            });
+                        }
+                    });
+
+                    const empData = employeeList.map(emp => {
+                        let row = {
+                            "Mã NV": emp.empId || "",
+                            "Họ Tên": emp.name || "",
+                            "Bộ phận": emp.department || "",
+                            "Line/Chuyền": emp.line || "",
+                            "Ngày vào làm": emp.year || ""
+                        };
+
+                        // Hàm phụ để quy đổi điểm số thành số thập phân trong Excel
+                        const getScore = (val) => {
+                            if(typeof val === 'object' && val !== null) return (val.theory + val.practice)/2;
+                            if(val === 'PASS') return 9;
+                            if(val === 'FAIL') return 4;
+                            return 'N/A';
+                        };
+
+                        // Ghi điểm các kỹ năng tiêu chuẩn
+                        row["Lamination"] = getScore(emp.lamination);
+                        row["Gelcoat"] = getScore(emp.gelcoat);
+                        row["Bonding"] = getScore(emp.bonding);
+                        row["Assembly"] = getScore(emp.assembly);
+                        row["FitOut"] = getScore(emp.fitout);
+                        row["Timber"] = getScore(emp.timber);
+                        row["Plumbing"] = getScore(emp.plumbing);
+                        row["Fabric"] = getScore(emp.fabric);
+                        row["Maintenance"] = getScore(emp.maintenance);
+
+                        // --- GHI ĐIỂM CÁC KỸ NĂNG TÙY BIẾN ĐÃ QUÉT ĐƯỢC ---
+                        allCustomSkills.forEach(skillName => {
+                            let foundSkill = null;
+                            if (emp.customSkills) {
+                                foundSkill = emp.customSkills.find(cs => cs.label === skillName);
+                            }
+                            // Nếu nhân viên có học môn này thì lấy điểm, nếu không học thì để N/A
+                            row[skillName] = foundSkill ? getScore(foundSkill.val) : 'N/A';
+                        });
+
+                        return row;
+                    });
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(empData), "Nhan_Su");
+
+                    // 2. XỬ LÝ SHEET TÀI LIỆU HƯỚNG DẪN (WI)
+                    const wiData = pdfFiles.map(file => ({ "Tên (Tiếng Việt)": file.vi, "Tên (Tiếng Anh)": file.en, "Đường Link": file.path }));
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(wiData), "Huong_Dan_Cong_Viec");
+
+                    // 3. XỬ LÝ SHEET HÓA CHẤT (TDS/MSDS)
+                    const tdsData = tdsMsdsFiles.map(file => ({ "Loại": file.type, "Danh mục": file.category, "Tên (Tiếng Việt)": file.vi, "Tên (Tiếng Anh)": file.en, "Đường Link": file.path }));
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(tdsData), "Hoa_Chat_TDS_MSDS");
+
+                    // 4. XỬ LÝ SHEET LỊCH SỬ HỆ THỐNG (Rất quan trọng cho việc tra cứu log)
+                    const logData = adminActionLogs.map(log => {
+                        let chiTiet = "";
+                        if (typeof log.details === 'object' && log.details !== null) {
+                            chiTiet = log.details.vi || log.details.en || "";
+                        } else { chiTiet = log.details || ""; }
+
+                        return { "Thời gian": log.time, "Thao tác": log.action, "Phân lớp": log.module, "Đối tượng": log.item, "Chi tiết": chiTiet };
+                    });
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(logData), "Lich_Su_He_Thong");
+
+                    // Lấy ngày giờ hiện tại để đặt tên file
+                    const dateObj = new Date();
+                    const dateStr = `${("0"+dateObj.getDate()).slice(-2)}-${("0"+(dateObj.getMonth()+1)).slice(-2)}-${dateObj.getFullYear()}`;
+                    const timeStr = `${("0"+dateObj.getHours()).slice(-2)}h${("0"+dateObj.getMinutes()).slice(-2)}`;
+                    
+                    // TẢI FILE XUỐNG MÁY TÍNH
+                    XLSX.writeFile(wb, `Seawind_Backup_Data_${dateStr}_${timeStr}.xlsx`);
+
+                } catch (error) {
+                    console.error("Lỗi xuất Excel:", error);
+                    alert("Có lỗi xảy ra khi tạo file Excel!");
+                } finally {
+                    // Trả lại trạng thái nút
+                    btn.innerHTML = originalHtml;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            }, 500); // Đợi 0.5s để hiệu ứng xoay xoay kịp hiển thị
+        }
+        // TÍNH NĂNG BƠM DỮ LIỆU LÊN CLOUD (TAB DB)
+        // ==========================================
+        async function backupToCloud() {
+            // 1. Hiển thị hiệu ứng xoay xoay đang tải
             const btn = document.getElementById('btnBackupCloud');
             const originalHtml = btn.innerHTML;
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> <span data-vi="Đang gửi..." data-en="Uploading...">Đang gửi...</span>`;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> <span data-vi="Đang bơm data..." data-en="Syncing...">Đang bơm data...</span>`;
             btn.disabled = true;
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
 
-            // 3. Lấy thời gian hiện tại (Đã đồng bộ chuẩn)
-            const now = new Date();
-            const timestamp = `${("0"+now.getDate()).slice(-2)}/${("0"+(now.getMonth()+1)).slice(-2)}/${now.getFullYear()} ${("0"+now.getHours()).slice(-2)}:${("0"+now.getMinutes()).slice(-2)}`;
+            try {
+                // 2. GỌI HÀM LƯU DỮ LIỆU CHÍNH THỨC VÀO TAB "DB"
+                await syncDatabaseToCloud();
 
-            // 4. Đóng gói dữ liệu (Gửi vào 2 cột bạn đã tạo ở Bước 0)
-            const dataObj = {
-                "ThoiGianBackup": timestamp,
-                "NoiDungCode": codeContent
-            };
+                // Lấy thời gian hiện tại
+                const now = new Date();
+                const timestamp = `${("0"+now.getDate()).slice(-2)}/${("0"+(now.getMonth()+1)).slice(-2)}/${now.getFullYear()} ${("0"+now.getHours()).slice(-2)}:${("0"+now.getMinutes()).slice(-2)}`;
 
-            // Link API SheetDB của bạn (Dùng chung với link Feedback)
-            // ĐÃ SỬA: Thêm ?sheet=Backup để báo cho hệ thống biết lưu vào tab Backup
-            const sheetdbAPI = 'https://sheetdb.io/api/v1/dcltmr9v1m6pz?sheet=Backup'; 
-
-            // 5. Gửi lên Cloud
-            fetch(sheetdbAPI, {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ data: [dataObj] })
-            })
-            .then((response) => response.json())
-            .then((data) => {
-                alert(currentLang === 'vi' ? 'Đã Backup thành công toàn bộ dữ liệu lên Cloud!' : 'Backup to Cloud successful!');
-// --- THÊM MỚI: Bắn thông báo đã Backup ---
-                sendSystemLogAlert({
-                    time: timestamp, 
-                    action: 'BACKUP', 
-                    module: 'HỆ THỐNG', 
-                    item: 'Toàn bộ dữ liệu (All Data)',
-                    details: { vi: "Đã sao lưu mã nguồn an toàn lên Cloud", en: "System data safely backed up to Cloud" }
-                });
-            })
-            .catch((error) => {
+                alert(currentLang === 'vi' ? 'Đã bơm toàn bộ dữ liệu thành công vào Tab DB!' : 'Data synced to DB successfully!');
+                
+                // Ghi Log hệ thống
+                if (typeof sendSystemLogAlert === 'function') {
+                    sendSystemLogAlert({
+                        time: timestamp, 
+                        action: 'DATA BACKUP', 
+                        module: 'HỆ THỐNG', 
+                        item: 'Toàn bộ dữ liệu (All Data)',
+                        details: { vi: "Đã bơm dữ liệu gốc lên Google Sheet (Tab DB)", en: "System data safely synced to DB sheet" }
+                    });
+                }
+            } catch (error) {
                 console.error('Lỗi khi backup:', error);
-                alert(currentLang === 'vi' ? 'Lỗi mạng! Không thể gửi file backup.' : 'Network error! Cannot backup.');
-            })
-            .finally(() => {
+                alert(currentLang === 'vi' ? 'Lỗi mạng! Không thể đẩy dữ liệu.' : 'Network error! Cannot sync.');
+            } finally {
                 // Trả lại trạng thái nút ban đầu
                 btn.innerHTML = originalHtml;
                 btn.disabled = false;
-                lucide.createIcons();
-            });
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
         }
 
         function closeImageModal() { document.getElementById('imageModal').classList.add('hidden'); }
@@ -4637,7 +4137,7 @@ let adminActionLogs = ${JSON.stringify(adminActionLogs, null, 4)};
         }
 
         function closeAllContentModal() { document.getElementById('allContentModal').classList.add('hidden'); }
-		// ==================== HÀM MỞ VIDEO GIỚI THIỆU ====================
+// ==================== HÀM MỞ VIDEO GIỚI THIỆU ====================
         function openIntroVideo() {
             document.getElementById('introVideoModal').classList.remove('hidden');
             // Tự động nạp lại icon nếu cần
@@ -5300,7 +4800,7 @@ let adminActionLogs = ${JSON.stringify(adminActionLogs, null, 4)};
 // =========================================================
         // HÀM XỬ LÝ DASHBOARD ĐÀO TẠO & AI PHÂN TÍCH
         // =========================================================
-		let heatmapAiChartInst = null; // Thêm dòng này để quản lý biểu đồ AI trong Heatmap
+	let heatmapAiChartInst = null; // Thêm dòng này để quản lý biểu đồ AI trong Heatmap
         let passFailChartInst = null;
         let skillsBarChartInst = null;
         let trendLineChartInst = null;
@@ -5704,57 +5204,48 @@ let adminActionLogs = ${JSON.stringify(adminActionLogs, null, 4)};
             
             aiBox.classList.remove('hidden');
             lucide.createIcons();
-        }        // Init
+        }        
         // Init (Khởi chạy khi mở trang web)
-        // Init (Khởi chạy khi mở trang web)
-        window.onload = function() {
-            
-            // =========================================================
-            // THÊM MỚI: TRẠM GÁC TỰ ĐỘNG KHÓA MÀN HÌNH KHI QUA NGÀY MỚI
-            // =========================================================
+        window.onload = async function() { 
+            // 1. TRẠM GÁC TỰ ĐỘNG KHÓA MÀN HÌNH
             setInterval(() => {
-                // Chỉ kiểm tra khi Xưởng ĐANG TẮT (Nghĩa là màn hình đang mở đủ 5 cột)
                 if (!isFactoryMode) {
                     const todayStr = new Date().toLocaleDateString('en-GB');
                     const savedDate = localStorage.getItem('factoryAuthDate');
-                    
-                    // Nếu ngày đã lưu khác với ngày hôm nay (Tức là đã qua 12h đêm)
                     if (savedDate && savedDate !== todayStr) {
-                        // 1. Tước quyền quản lý ngay lập tức
                         localStorage.removeItem('isFactoryMgrAuthed');
                         localStorage.removeItem('factoryAuthDate');
-                        
-                        // 2. Tự động ép bật lại Chế độ Xưởng (Khóa màn hình lại)
                         executeToggleFactory();
-                        
-                        // (Tùy chọn) Bắn log hệ thống nếu muốn ghi nhận sự kiện này
-                        if (typeof sendSystemLogAlert === 'function') {
-                            const now = new Date();
-                            const timestamp = `${("0"+now.getDate()).slice(-2)}/${("0"+(now.getMonth()+1)).slice(-2)}/${now.getFullYear()} ${("0"+now.getHours()).slice(-2)}:${("0"+now.getMinutes()).slice(-2)}`;
-                            sendSystemLogAlert({
-                                time: timestamp, action: 'TỰ ĐỘNG KHÓA', module: 'BẢO MẬT', item: 'Hệ thống Xưởng',
-                                details: { vi: 'Chuyển ngày mới. Đã tự động khóa lại Chế độ Xưởng.', en: 'Day rolled over. Auto-locked to Factory Mode.' }
-                            });
-                        }
                     }
                 }
-            }, 60000); // 60000 mili-giây = Quét 1 phút 1 lần
-            // =========================================================
+            }, 60000); 
 
+            // HIỂN THỊ MÀN HÌNH CHỜ TRONG LÚC TẢI DỮ LIỆU TỪ SHEET
+            document.body.insertAdjacentHTML('beforeend', `
+                <div id="globalLoader" class="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center">
+                    <i data-lucide="cloud-download" class="w-16 h-16 animate-bounce text-seawind-blue mb-4"></i>
+                    <h2 class="text-xl font-black text-slate-800 uppercase tracking-widest">ĐANG ĐỒNG BỘ MÁY CHỦ</h2>
+                    <p class="mt-2 text-sm text-slate-500">Vui lòng đợi vài giây...</p>
+                </div>
+            `);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
 
-            // === BẮT ĐẦU DÁN THÊM: HIỂN THỊ VIDEO HƯỚNG DẪN ===
-            // (Phần code cũ của bạn bên dưới giữ nguyên không đụng tới...)
+            // Gọi hàm kéo dữ liệu từ Google Sheets
+            await fetchDatabaseFromCloud();
+
+            // TẮT MÀN HÌNH CHỜ SAU KHI TẢI XONG (Đã sửa lỗi trùng lặp biến)
+            const globalLoaderEl = document.getElementById('globalLoader');
+            if (globalLoaderEl) globalLoaderEl.remove();
+
+            // BẬT VIDEO HƯỚNG DẪN 
             if (!sessionStorage.getItem('introVideoShown')) {
                 setTimeout(() => {
                     document.getElementById('introVideoModal').classList.remove('hidden');
                     sessionStorage.setItem('introVideoShown', 'true');
-                }, 500); // Đợi 0.5s sau khi web load xong mới bật lên cho mượt
+                }, 500); 
             }
-            // === KẾT THÚC DÁN THÊM ===
 
-            renderList(pdfFiles);
-            renderTdsMsdsList(tdsMsdsFiles); 
-            // ... (các hàm cũ bên dưới giữ nguyên) ...
+            // GỌI CÁC HÀM RENDER ĐỂ VẼ DỮ LIỆU LÊN GIAO DIỆN
             renderList(pdfFiles);
             renderTdsMsdsList(tdsMsdsFiles); 
             renderMediaUI();
@@ -5766,26 +5257,16 @@ let adminActionLogs = ${JSON.stringify(adminActionLogs, null, 4)};
             initNotifications(); 
             updateRetrainAlerts(); 
 
-            // ==============================================================
-            // HỆ THỐNG ĐỌC MÃ QR ĐÃ NÂNG CẤP (QUÉT -> CHỌN NGÔN NGỮ -> MỞ HỒ SƠ)
-            // ==============================================================
+            // XỬ LÝ MÃ QR 
             const urlParams = new URLSearchParams(window.location.search);
             const viewEmpId = urlParams.get('viewEmp');
-            
-            // Nếu phát hiện có người đang mở web thông qua quét mã QR
             if (viewEmpId) {
-                // ĐÃ XÓA LỆNH TẮT CHẾ ĐỘ XƯỞNG TẠI ĐÂY (Để khách chỉ thấy 3 cột 1, 2, 4)
-                
-                // Thay vì mở thẳng hồ sơ, ta hiển thị Bảng Chọn Ngôn Ngữ
-                setTimeout(() => {
-                    showQrLanguageSelector(viewEmpId);
-                }, 300);
+                setTimeout(() => { showQrLanguageSelector(viewEmpId); }, 300);
             }
             
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
-// HÀM TẠO THẺ VÀ IN MÃ QR CODE RIÊNG BIỆT DÁN CÔNG TRƯỜNG
         // HÀM TẠO THẺ VÀ IN MÃ QR CODE RIÊNG BIỆT DÁN CÔNG TRƯỜNG
         function printQRCode() {
             // 1. Lấy dữ liệu từ giao diện
