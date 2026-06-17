@@ -2639,22 +2639,22 @@ function analyzeHeatmapAI() {
             if(pdfFiles.length > 0) latestDocs.push(pdfFiles[pdfFiles.length - 1].vi);
             if(pdfFiles.length > 1) latestDocs.push(pdfFiles[pdfFiles.length - 2].vi);
 
-            list.innerHTML = files.map(file => {
-                const isNew = latestDocs.includes(file.vi);
-                const badgeHtml = isNew ? `<span class="ml-auto px-1.5 py-0.5 text-[8px] font-bold bg-rose-500 text-white rounded animate-pulse shadow-sm whitespace-nowrap" data-vi="MỚI" data-en="NEW">${currentLang === 'vi' ? 'MỚI' : 'NEW'}</span>` : '';
-                return `
-                <li class="border-b last:border-0 border-slate-100">
-                    <!-- ĐÃ SỬA: Thay thẻ <a> bằng <div> và dùng onclick gọi hàm mở Modal -->
-                    <div onclick="openDocumentModal('${file.path}')" class="flex items-center py-3 px-2 hover:bg-blue-50 rounded transition-colors group cursor-pointer">
-                        <i data-lucide="file-text" class="w-4 h-4 text-slate-400 mr-3 shrink-0"></i>
-                        <span class="text-sm text-slate-700 font-medium">${file[currentLang] || file.vi}</span> 
-                        ${badgeHtml}
-                    </div>
-                </li>
-            `}).join('');
-            document.getElementById('totalWiCount').innerText = pdfFiles.length; 
-            lucide.createIcons();
-        }
+            // ĐÃ SỬA: Thêm [...files].reverse() để đảo ngược danh sách, cái mới nhất lên đầu
+        list.innerHTML = [...files].reverse().map(file => {
+            const isNew = latestDocs.includes(file.vi);
+            const badgeHtml = isNew ? `<span class="ml-auto px-1.5 py-0.5 text-[8px] font-bold bg-rose-500 text-white rounded animate-pulse shadow-sm whitespace-nowrap" data-vi="MỚI" data-en="NEW">${currentLang === 'vi' ? 'MỚI' : 'NEW'}</span>` : '';
+            return `
+            <li class="border-b last:border-0 border-slate-100">
+                <div onclick="openDocumentModal('${file.path}')" class="flex items-center py-3 px-2 hover:bg-blue-50 rounded transition-colors group cursor-pointer">
+                    <i data-lucide="file-text" class="w-4 h-4 text-slate-400 mr-3 shrink-0"></i>
+                    <span class="text-sm text-slate-700 font-medium">${file[currentLang] || file.vi}</span> 
+                    ${badgeHtml}
+                </div>
+            </li>
+        `}).join('');
+        document.getElementById('totalWiCount').innerText = pdfFiles.length; 
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
 
         function renderTdsMsdsList(files) {
             const list = document.getElementById('tdsMsdsList');
