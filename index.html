@@ -5419,12 +5419,19 @@ newItemObj = {
             const globalLoaderEl = document.getElementById('globalLoader');
             if (globalLoaderEl) globalLoaderEl.remove();
 
-            // BẬT VIDEO HƯỚNG DẪN 
-            if (!sessionStorage.getItem('introVideoShown')) {
+            // BẬT VIDEO HƯỚNG DẪN (CHỈ BẬT KHI MỞ WEB BÌNH THƯỜNG, BỎ QUA NẾU ĐANG QUÉT MÃ QR)
+            const isScanningQR = window.location.search.includes('viewEmp');
+            
+            if (!sessionStorage.getItem('introVideoShown') && !isScanningQR) {
                 setTimeout(() => {
                     document.getElementById('introVideoModal').classList.remove('hidden');
                     sessionStorage.setItem('introVideoShown', 'true');
                 }, 500); 
+            }
+            
+            // Nếu người dùng quét mã QR, đánh dấu ngầm là đã xem video để các lần F5 sau video cũng không làm phiền
+            if (isScanningQR) {
+                sessionStorage.setItem('introVideoShown', 'true');
             }
 
             // GỌI CÁC HÀM RENDER ĐỂ VẼ DỮ LIỆU LÊN GIAO DIỆN
