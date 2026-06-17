@@ -826,6 +826,29 @@
                     <span class="text-[11px] font-medium" data-vi="Nếu video bị đen (Lỗi 153), nguyên nhân do bản quyền Youtube. Vui lòng bấm 'Mở Toàn Màn Hình' ở góc trên để xem." data-en="If video shows Error 153 (black screen), it's restricted by YouTube. Please click 'Open Fullscreen' above.">Nếu video bị đen (Lỗi 153), nguyên nhân do bản quyền Youtube. Vui lòng bấm "Mở Toàn Màn Hình" ở góc trên để xem.</span>
                 </div>
             </div>
+<!-- DÁN THÊM KHỐI NÀY VÀO ĐÂY: BANNER ĐĂNG NHẬP MICROSOFT 365 -->
+            <!-- DÁN THÊM KHỐI NÀY VÀO ĐÂY: BANNER ĐĂNG NHẬP MICROSOFT 365 (NÂNG CẤP V2) -->
+            <div id="ms365Warning" class="hidden bg-blue-50 border-b border-blue-200 p-2.5 flex flex-col md:flex-row justify-between items-start md:items-center shrink-0 gap-3">
+                <div class="flex items-start gap-2 text-seawind-blue">
+                    <i data-lucide="shield-alert" class="w-5 h-5 animate-pulse shrink-0 mt-0.5"></i>
+                    <div class="text-[11px] font-medium leading-tight">
+                        <p data-vi="Khung này bị mờ nút Sign-in do bảo mật của trình duyệt (đặc biệt ở Tab Ẩn danh)." data-en="Sign-in disabled due to browser security (especially in Incognito).">Khung này bị mờ nút Sign-in do bảo mật của trình duyệt (đặc biệt ở Tab Ẩn danh).</p>
+                        <p class="font-bold mt-1 text-blue-800" data-vi="Xử lý: [Bước 1] Đăng nhập ở Tab mới ➜ [Bước 2] Quay lại đây bấm Tải Lại Khung." data-en="Fix: [Step 1] Sign in on new tab ➜ [Step 2] Return here and Reload Frame.">Xử lý: [Bước 1] Đăng nhập ở Tab mới ➜ [Bước 2] Quay lại đây bấm Tải Lại Khung.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 w-full md:w-auto mt-2 md:mt-0">
+                    <!-- Nút 1: Đăng nhập tab mới -->
+                    <a id="btnMs365Login" href="#" target="_blank" class="flex-1 md:flex-none justify-center bg-white text-seawind-blue border border-seawind-blue hover:bg-blue-100 text-[10px] font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all shadow-sm">
+                        <span class="bg-seawind-blue text-white rounded-full w-3.5 h-3.5 flex items-center justify-center text-[8px]">1</span>
+                        <span data-vi="Đăng Nhập MS365" data-en="Sign in MS365">Đăng Nhập MS365</span>
+                    </a>
+                    <!-- Nút 2: Tải lại khung Iframe -->
+                    <button onclick="reloadDocumentIframe()" class="flex-1 md:flex-none justify-center bg-seawind-blue hover:bg-blue-800 text-white text-[10px] font-bold px-3 py-2 rounded-lg flex items-center gap-1.5 shadow-md transition-all">
+                        <span class="bg-white text-seawind-blue rounded-full w-3.5 h-3.5 flex items-center justify-center text-[8px]">2</span>
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> <span data-vi="Tải Lại Khung" data-en="Reload Frame">Tải Lại Khung</span>
+                    </button>
+                </div>
+            </div>
 
             <!-- Khu vực chứa tài liệu -->
             <div class="flex-1 w-full relative bg-slate-100 flex flex-col">
@@ -2639,7 +2662,7 @@ function analyzeHeatmapAI() {
             if(pdfFiles.length > 0) latestDocs.push(pdfFiles[pdfFiles.length - 1].vi);
             if(pdfFiles.length > 1) latestDocs.push(pdfFiles[pdfFiles.length - 2].vi);
 
-            // ĐÃ SỬA: Thêm [...files].reverse() để đảo ngược danh sách, cái mới nhất lên đầu
+           // ĐÃ SỬA: Thêm [...files].reverse() để đảo ngược danh sách, cái mới nhất lên đầu
         list.innerHTML = [...files].reverse().map(file => {
             const isNew = latestDocs.includes(file.vi);
             const badgeHtml = isNew ? `<span class="ml-auto px-1.5 py-0.5 text-[8px] font-bold bg-rose-500 text-white rounded animate-pulse shadow-sm whitespace-nowrap" data-vi="MỚI" data-en="NEW">${currentLang === 'vi' ? 'MỚI' : 'NEW'}</span>` : '';
@@ -5542,73 +5565,110 @@ let adminActionLogs = ${JSON.stringify(adminActionLogs, null, 4)};
             };
             lucide.createIcons();
         }
-// ==================== HÀM MỞ/ĐÓNG MODAL TÀI LIỆU ====================
+// ==================== HÀM MỞ/ĐÓNG MODAL TÀI LIỆU (ĐÃ SỬA LỖI & NÂNG CẤP) ====================
         function openDocumentModal(url) {
-            // 1. Lấy các thành phần DOM
             const modal = document.getElementById('documentIframeModal');
             const iframe = document.getElementById('docIframe');
             const loader = document.getElementById('iframeLoader');
             const fallbackUI = document.getElementById('notebookFallback');
             const btnOpenNotebook = document.getElementById('btnOpenNotebook');
-            const ytWarning = document.getElementById('youtubeWarning'); // Lấy DOM của Banner Youtube
+            const ytWarning = document.getElementById('youtubeWarning'); 
+            const ms365Warning = document.getElementById('ms365Warning'); 
+            const btnMs365Login = document.getElementById('btnMs365Login'); 
             
-            // 2. Hiện Modal lên và set Link cho nút dự phòng trên thanh công cụ
             modal.classList.remove('hidden');
             document.getElementById('docExternalLink').href = url;
 
-            // 3. THUẬT TOÁN NHẬN DIỆN LINK
             if (url.includes('notebooklm.google.com')) {
-                // NẾU LÀ LINK NOTEBOOK LM: Tắt Iframe, Mở giao diện cảnh báo
                 iframe.classList.add('hidden');
-                iframe.src = ''; // Clear src để không lỗi ngầm
+                iframe.src = ''; 
                 loader.classList.add('hidden');
-                if(ytWarning) ytWarning.classList.add('hidden'); // Ẩn banner YT
+                if(ytWarning) ytWarning.classList.add('hidden'); 
+                if(ms365Warning) ms365Warning.classList.add('hidden'); 
                 
                 fallbackUI.classList.remove('hidden');
                 btnOpenNotebook.href = url; 
                 
             } else {
-                // NẾU LÀ LINK BÌNH THƯỜNG (Sharepoint/PDF/Youtube)
                 fallbackUI.classList.add('hidden');
-                
                 iframe.classList.remove('hidden');
                 loader.classList.remove('hidden');
 
                 let finalUrl = url;
                 
-                // NHẬN DIỆN RIÊNG YOUTUBE ĐỂ XỬ LÝ LỖI 153
                 if (url.includes('youtube.com') || url.includes('youtube-nocookie.com') || url.includes('youtu.be')) {
-                    if(ytWarning) ytWarning.classList.remove('hidden'); // Bật thanh cảnh báo đỏ lên
+                    if(ytWarning) ytWarning.classList.remove('hidden'); 
+                    if(ms365Warning) ms365Warning.classList.add('hidden'); 
                     
-                    // TẮT AUTOPLAY: Trình duyệt ngày nay rất hay block iframe nếu nó tự động phát video gây lỗi 153
                     finalUrl = finalUrl.replace('autoplay=1', 'autoplay=0');
-                    
-                    // Thêm Origin
                     if (finalUrl.includes('?')) {
                         finalUrl += '&origin=https://seawindcats.com';
                     } else {
                         finalUrl += '?origin=https://seawindcats.com';
                     }
-                } else {
-                    if(ytWarning) ytWarning.classList.add('hidden'); // Nếu là Sharepoint/PDF thì ẩn thanh cảnh báo đỏ đi
+                } 
+                // NHẬN DIỆN CẢ SHAREPOINT VÀ GOOGLE DRIVE ĐỂ BẬT THANH CẢNH BÁO
+                else if (url.includes('sharepoint.com') || url.includes('onedrive.live.com') || url.includes('drive.google.com') || url.includes('docs.google.com')) {
+                    if(ytWarning) ytWarning.classList.add('hidden'); 
+                    if(ms365Warning) ms365Warning.classList.remove('hidden'); 
+                    
+                    if(btnMs365Login) {
+                        btnMs365Login.href = url; 
+                        // Tự động đổi chữ trên nút tùy theo link là của Google hay Microsoft
+                        if (url.includes('google.com')) {
+                            btnMs365Login.innerHTML = `<span class="bg-seawind-blue text-white rounded-full w-3.5 h-3.5 flex items-center justify-center text-[8px]">1</span><span data-vi="Đăng Nhập Google" data-en="Sign in Google">Đăng Nhập Google</span>`;
+                        } else {
+                            btnMs365Login.innerHTML = `<span class="bg-seawind-blue text-white rounded-full w-3.5 h-3.5 flex items-center justify-center text-[8px]">1</span><span data-vi="Đăng Nhập MS365" data-en="Sign in MS365">Đăng Nhập MS365</span>`;
+                        }
+                    }
+                } 
+                else {
+                    if(ytWarning) ytWarning.classList.add('hidden');
+                    if(ms365Warning) ms365Warning.classList.add('hidden');
                 }
                 
                 iframe.src = finalUrl;
             }
             
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
+        // ĐÃ KHÔI PHỤC LẠI HÀM ĐÓNG MODAL BỊ MẤT
         function closeDocumentModal(event) {
-            // Chỉ tắt khi click trúng viền đen bên ngoài, không tắt khi click vào khung trắng
             if (!event || event.target === event.currentTarget) {
                 document.getElementById('documentIframeModal').classList.add('hidden');
                 document.getElementById('docIframe').src = '';
                 
-                // Trả lại trạng thái mặc định (ẩn fallback) để lần sau mở file khác không bị kẹt giao diện
-                document.getElementById('notebookFallback').classList.add('hidden');
+                const fallback = document.getElementById('notebookFallback');
+                if(fallback) fallback.classList.add('hidden');
+                
                 const ytWarning = document.getElementById('youtubeWarning');
                 if(ytWarning) ytWarning.classList.add('hidden');
+                
+                const ms365Warning = document.getElementById('ms365Warning');
+                if(ms365Warning) ms365Warning.classList.add('hidden');
+            }
+        }
+
+        // ==============================================================
+        // HÀM TẢI LẠI RIÊNG KHUNG IFRAME (Dành cho chức năng đăng nhập)
+        // ==============================================================
+        function reloadDocumentIframe() {
+            const iframe = document.getElementById('docIframe');
+            const loader = document.getElementById('iframeLoader');
+            
+            const currentSrc = iframe.src;
+            loader.classList.remove('hidden');
+            iframe.src = '';
+            
+            setTimeout(() => {
+                iframe.src = currentSrc;
+            }, 300);
+            
+            const refreshIcon = document.querySelector('button[onclick="reloadDocumentIframe()"] i');
+            if (refreshIcon) {
+                refreshIcon.classList.add('animate-spin');
+                setTimeout(() => refreshIcon.classList.remove('animate-spin'), 1000);
             }
         }
 </script>
