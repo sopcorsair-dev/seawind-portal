@@ -1853,7 +1853,7 @@
             <!-- Khung Iframe Youtube -->
             <!-- LƯU Ý: THAY ĐOẠN "ID_VIDEO_CUA_BAN" BẰNG MÃ VIDEO YOUTUBE THẬT CỦA BẠN -->
             <iframe id="introIframe" class="w-full h-full relative z-10" 
-                    src="https://corsairmarinevn-my.sharepoint.com/personal/phuc_le_thai_corsairmarine_com/_layouts/15/embed.aspx?UniqueId=bfec72e9-b72d-4d09-a4da-ca54aa10d515&embed=%7B%22ust%22%3Atrue%2C%22hv%22%3A%22CopyEmbedCode%22%7D&referrer=StreamWebApp&referrerScenario=EmbedDialog.Create" width="640" height="360" frameborder="0" scrolling="no" allowfullscreen title="User Guide.mp4" 
+                    src="https://corsairmarinevn.sharepoint.com/sites/DWGManagementDesign/_layouts/15/embed.aspx?UniqueId=b70d5445-765e-4be6-9379-5c372ca269bd&embed=%7B%22ust%22%3Atrue%2C%22hv%22%3A%22CopyEmbedCode%22%7D&referrer=StreamWebApp&referrerScenario=EmbedDialog.Create" width="640" height="360" frameborder="0" scrolling="no" allowfullscreen title="User Guide.mp4" 
                     title="Hướng dẫn sử dụng Website" 
                     frameborder="0" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -5217,7 +5217,184 @@ newItemObj = {
             
             aiBox.classList.remove('hidden');
             lucide.createIcons();
-        }        
+        }  
+// =========================================================
+        // HÀM TỰ ĐỘNG QUÉT VÀ GỬI CẢNH BÁO HẾT HẠN (TELEGRAM & GOOGLE SCRIPT EMAIL)
+        // =========================================================
+        function checkAndSendExpiryAlerts() {
+            const ALERTED_STORAGE_KEY = 'sw_alerted_expiries';
+            let alertedKeys = JSON.parse(localStorage.getItem(ALERTED_STORAGE_KEY)) || [];
+            let newAlerts = [];
+
+            const standardSkills = [
+                { k: 'lamination', d: 'lamDate', name: 'Lamination' }, { k: 'gelcoat', d: 'gelDate', name: 'Gelcoat' },
+                { k: 'bonding', d: 'bonDate', name: 'Bonding' }, { k: 'assembly', d: 'assDate', name: 'Assembly' },
+                { k: 'fitout', d: 'fitDate', name: 'FitOut' }, { k: 'timber', d: 'timDate', name: 'Timber' },
+                { k: 'plumbing', d: 'pluDate', name: 'Plumbing' }, { k: 'fabric', d: 'fabDate', name: 'Fabric' },
+                { k: 'maintenance', d: 'maiDate', name: 'Maintenance' }
+            ];
+
+            employeeList.forEach(emp => {
+                let skillsToCheck = [];
+                standardSkills.forEach(sk => skillsToCheck.push({ val: emp[sk.k], date: emp[sk.d], name: sk.name }));
+
+                if (emp.customSkills && Array.isArray(emp.customSkills)) {
+                    emp.customSkills.forEach(cs => skillsToCheck.push({ val: cs.val, date: cs.date, name: cs.label }));
+                }
+
+                skillsToCheck.forEach(sk => {
+                    let isPass = false;
+                    // Chấp nhận cấp chứng chỉ cho cả thợ chính (>=8) và thợ phụ (>=5)
+                    if (typeof sk.val === 'object' && sk.val !== null) {
+                        isPass = ((sk.val.theory + sk.val.practice) / 2) >= 5; 
+                    } else {
+                        isPass = (sk.val === 'PASS' || sk.val === 'MASTER' || sk.val === 'ASSISTANT');
+                    }
+
+                    if (isPass && sk.date && sk.date !== 'N/A') {
+                        const info = getSkillExpiryInfo(sk.date);
+                        
+                        // ĐIỀU KIỆN MỚI: Chỉ lấy những chứng chỉ CÒN HẠN TỪ 0 ĐẾN 7 NGÀY (Bỏ qua số âm - đã hết hạn)
+                        if (info && info.days >= 0 && info.days <= 7) {
+                            let uniqueAlertId = `${emp.empId}_${sk.name}_${sk.date}`;
+                            
+                            // Chỉ gửi nếu chưa từng gửi thông báo cho cái ID này
+                            if (!alertedKeys.includes(uniqueAlertId)) {
+                                newAlerts.push({
+                                    empName: emp.name,
+                                    empId: emp.empId,
+                                    dept: emp.department || 'N/A',
+                                    skillName: sk.name,
+                                    daysLeft: info.days,
+                                    expiryDate: sk.date,
+                                    alertId: uniqueAlertId
+                                });
+                            }
+                        }
+                    }
+                });
+            });
+
+            if (newAlerts.length > 0) {
+                sendExpiryNotifications(newAlerts);
+                newAlerts.forEach(alert => alertedKeys.push(alert.alertId));
+                localStorage.setItem(ALERTED_STORAGE_KEY, JSON.stringify(alertedKeys));
+            }
+        }
+
+        function sendExpiryNotifications(alerts) {
+            // ==========================================
+            // 1. TẠO NỘI DUNG TEXT CHO TELEGRAM
+            // ==========================================
+            let teleMessage = `🚨 <b>ACTION REQUIRED: SKILL CERTIFICATION EXPIRY ALERT</b> 🚨\n\n`;
+            teleMessage += `<i>This is an automated notification from the Seawind Knowledge Portal. The following personnel have skill certifications that are expiring within the next 7 days.</i>\n\n`;
+            
+            // ==========================================
+            // 2. TẠO NỘI DUNG HTML ĐẸP CHO EMAIL
+            // ==========================================
+            let emailMessage = `
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #334155; max-width: 650px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                    
+                    <!-- Header -->
+                    <div style="background-color: #f59e0b; color: white; padding: 20px; text-align: center; border-bottom: 4px solid #d97706;">
+                        <h2 style="margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px;">⚠️ Action Required: Expiring Soon</h2>
+                        <p style="margin: 8px 0 0 0; font-size: 14px; opacity: 0.9;">Automated Alert from Seawind Training System</p>
+                    </div>
+                    
+                    <!-- Body Introduction -->
+                    <div style="padding: 24px;">
+                        <p style="margin-top: 0; line-height: 1.6; font-size: 15px;">Dear Management Team,</p>
+                        <p style="line-height: 1.6; font-size: 15px;">Please be advised that the skill certifications for the following personnel are due to expire within the next <strong>7 days</strong>. Retraining and reassessment are strongly recommended.</p>
+                        
+                        <!-- Data Table -->
+                        <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;">
+                            <thead>
+                                <tr style="background-color: #f1f5f9; border-top: 2px solid #cbd5e1; border-bottom: 2px solid #cbd5e1;">
+                                    <th style="padding: 12px; text-align: left; color: #475569;">Personnel</th>
+                                    <th style="padding: 12px; text-align: left; color: #475569;">Skill / Process</th>
+                                    <th style="padding: 12px; text-align: left; color: #475569;">Status / Expiry Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            // Lặp qua danh sách cảnh báo (Giờ đây 100% là người Sắp Hết Hạn)
+            alerts.forEach((alert, index) => {
+                let statusText = "EXPIRING SOON";
+                let dayText = `in ${alert.daysLeft} days`;
+                let statusColor = '#d97706'; // Màu cam báo hiệu sắp hết hạn
+                let bgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc'; 
+
+                // Thêm dữ liệu vào chuỗi Telegram
+                teleMessage += `<b>${index + 1}. ${alert.empName}</b> (ID: ${alert.empId})\n`;
+                teleMessage += `   ├ Dept: ${alert.dept}\n`;
+                teleMessage += `   ├ Skill: <b>${alert.skillName}</b>\n`;
+                teleMessage += `   └ Status: <b>${statusText}</b> (${dayText} - Date: ${alert.expiryDate})\n\n`;
+
+                // Thêm dữ liệu vào dòng của Bảng HTML Email
+                emailMessage += `
+                    <tr style="background-color: ${bgColor}; border-bottom: 1px solid #e2e8f0;">
+                        <td style="padding: 12px; vertical-align: top;">
+                            <strong style="color: #1e293b;">${alert.empName}</strong><br>
+                            <span style="color: #64748b; font-size: 12px;">ID: ${alert.empId} | Dept: ${alert.dept}</span>
+                        </td>
+                        <td style="padding: 12px; vertical-align: top; font-weight: 600; color: #0369a1;">
+                            ${alert.skillName}
+                        </td>
+                        <td style="padding: 12px; vertical-align: top;">
+                            <span style="color: ${statusColor}; font-weight: bold; font-size: 13px; padding: 2px 6px; border-radius: 4px; border: 1px solid ${statusColor}40;">${statusText}</span><br>
+                            <span style="font-size: 12px; color: #64748b; display: inline-block; margin-top: 4px;">${dayText} (${alert.expiryDate})</span>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Kết thúc bảng và phần chân chữ ký
+            teleMessage += `📌 <i>Please review the Skill Matrix dashboard and schedule the necessary assessments.</i>`;
+            
+            emailMessage += `
+                            </tbody>
+                        </table>
+                        
+                        <!-- Footer Actions -->
+                        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed #cbd5e1; text-align: center;">
+                            <p style="font-size: 14px; color: #475569; margin-bottom: 15px;">Please log in to the Seawind Portal to review the detailed Skill Matrix and schedule assessments.</p>
+                            
+                            <p style="font-size: 12px; color: #94a3b8; margin-top: 20px;">
+                                This is a system-generated message. Please do not reply directly to this email.<br>
+                                &copy; ${new Date().getFullYear()} Seawind Catamarans Knowledge Portal
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // ==========================================
+            // LỆNH GỬI TELEGRAM
+            // ==========================================
+            const telegramBotToken = "8749329642:AAHNQ5V8QyMeZLrz8yTmGyAsMXAzZ-95LI4"; 
+            const telegramChatId = "5209672702"; 
+            fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: telegramChatId, text: teleMessage, parse_mode: 'HTML' })
+            }).catch(e => console.log("Telegram Error:", e));
+
+
+            // ==========================================
+            // LỆNH GỬI GOOGLE APPS SCRIPT EMAIL
+            // ==========================================
+            // !!! LƯU Ý: Nếu bạn đã thay link Google Script ở bước trước, NHỚ DÁN LẠI VÀO ĐÂY NHÉ !!!
+            const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby.../exec"; 
+
+            fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ message: emailMessage })
+            })
+            .then(response => console.log("Expiry alert email sent successfully!"))
+            .catch(error => console.log("GAS Email Error:", error));
+        }      
         // Init (Khởi chạy khi mở trang web)
         window.onload = async function() { 
             // 1. TRẠM GÁC TỰ ĐỘNG KHÓA MÀN HÌNH
@@ -5268,7 +5445,9 @@ newItemObj = {
            
             updateAnnouncement();
             initNotifications(); 
-            updateRetrainAlerts(); 
+            updateRetrainAlerts();
+// KÍCH HOẠT HỆ THỐNG QUÉT VÀ GỬI CẢNH BÁO TỰ ĐỘNG
+            checkAndSendExpiryAlerts(); 
 
             // XỬ LÝ MÃ QR 
             const urlParams = new URLSearchParams(window.location.search);
