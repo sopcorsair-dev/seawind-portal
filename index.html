@@ -1282,21 +1282,38 @@
                     </button>
                 </div>
 
-                <!-- PHẦN CODE GENERATOR (Giao diện IDE) -->
-                <div class="w-full md:w-1/2 flex flex-col bg-[#0d1117] overflow-hidden">
-                    <div class="p-4 border-b border-gray-800 flex justify-between items-center shrink-0">
-                        <h4 class="text-xs font-bold text-green-400 uppercase tracking-wide flex items-center gap-2"><i data-lucide="braces" class="w-4 h-4"></i> <span data-vi="Mã Code Tự Động Sinh" data-en="Auto Generated Code">Mã Code Tự Động Sinh</span></h4>
-                        <button onclick="copyGeneratedCode()" class="bg-gray-800 hover:bg-gray-700 text-white text-xs px-3 py-1.5 rounded flex items-center gap-2 transition border border-gray-600">
-                            <i data-lucide="copy" class="w-3 h-3"></i> <span data-vi="Sao chép mã" data-en="Copy code">Sao chép mã</span>
-                        </button>
-<button id="btnBackupCloud" onclick="backupToCloud()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs px-3 py-1.5 rounded flex items-center gap-2 transition border border-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.3)] ml-2">
-    <i data-lucide="cloud-upload" class="w-3 h-3"></i> <span data-vi="Backup Lên Cloud" data-en="Cloud Backup">Backup Lên Cloud</span>
-</button>
-<button id="btnExportExcel" onclick="exportBackupToExcel()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded flex items-center gap-2 transition border border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)] ml-2" title="Tải toàn bộ dữ liệu về máy dưới dạng file Excel">
-    <i data-lucide="file-spreadsheet" class="w-3 h-3"></i> <span data-vi="Tải Backup Excel" data-en="Download Excel">Tải Backup Excel</span>
-</button>
+                <!-- PHẦN QUẢN LÝ DỮ LIỆU ĐÁM MÁY (Thay thế IDE cũ) -->
+                <div class="w-full md:w-1/2 flex flex-col bg-slate-50 border-l border-slate-200 items-center justify-center p-8 relative overflow-hidden">
+                    <!-- Background trang trí -->
+                    <div class="absolute inset-0 opacity-5 pointer-events-none">
+                        <div class="absolute inset-0 tech-grid"></div>
                     </div>
-                    <textarea id="quickEntryCodeOutput" readonly class="flex-1 w-full bg-[#0d1117] text-[#c9d1d9] text-[11px] font-mono p-4 focus:outline-none resize-none code-scrollbar"></textarea>
+
+                    <!-- Tiêu đề khu vực -->
+                    <div class="text-center mb-8 relative z-10">
+                        <div class="w-16 h-16 bg-blue-100 text-seawind-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                            <i data-lucide="server" class="w-8 h-8"></i>
+                        </div>
+                        <h4 class="text-xl font-black text-slate-800 uppercase tracking-wide" data-vi="Đồng Bộ & Sao Lưu" data-en="Sync & Backup">Đồng Bộ & Sao Lưu</h4>
+                        <p class="text-sm text-slate-500 mt-2" data-vi="Quản lý an toàn dữ liệu hệ thống" data-en="Manage system data securely">Quản lý an toàn dữ liệu hệ thống</p>
+                    </div>
+
+                    <!-- Các nút chức năng to bản -->
+                    <div class="w-full max-w-sm space-y-5 relative z-10">
+                        <!-- Nút Backup Cloud -->
+                        <button id="btnBackupCloud" onclick="backupToCloud()" class="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold py-5 px-6 rounded-2xl flex flex-col items-center gap-2 transition-all shadow-[0_10px_20px_rgba(14,165,233,0.2)] hover:scale-105 hover:shadow-[0_15px_30px_rgba(14,165,233,0.3)] group">
+                            <i data-lucide="cloud-upload" class="w-8 h-8 group-hover:-translate-y-1 transition-transform"></i>
+                            <span class="text-base" data-vi="ĐỒNG BỘ LÊN CLOUD (DB)" data-en="SYNC TO CLOUD (DB)">ĐỒNG BỘ LÊN CLOUD (DB)</span>
+                            <span class="text-[11px] font-medium opacity-80" data-vi="Lưu mọi thay đổi lên máy chủ SheetDB" data-en="Save all changes to SheetDB server">Lưu mọi thay đổi lên máy chủ SheetDB</span>
+                        </button>
+
+                        <!-- Nút Xuất Excel -->
+                        <button id="btnExportExcel" onclick="exportBackupToExcel()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold py-5 px-6 rounded-2xl flex flex-col items-center gap-2 transition-all shadow-[0_10px_20px_rgba(16,185,129,0.2)] hover:scale-105 hover:shadow-[0_15px_30px_rgba(16,185,129,0.3)] group">
+                            <i data-lucide="file-spreadsheet" class="w-8 h-8 group-hover:-translate-y-1 transition-transform"></i>
+                            <span class="text-base" data-vi="TẢI XUỐNG BẢN EXCEL" data-en="DOWNLOAD EXCEL BACKUP">TẢI XUỐNG BẢN EXCEL</span>
+                            <span class="text-[11px] font-medium opacity-80" data-vi="Tải toàn bộ dữ liệu về máy để lưu trữ" data-en="Download all data to local device">Tải toàn bộ dữ liệu về máy để lưu trữ</span>
+                        </button>
+                    </div>
                 </div>
 
             </div>
@@ -3304,7 +3321,7 @@ function analyzeHeatmapAI() {
         function openQuickEntryModal() {
             document.getElementById('quickEntryModal').classList.remove('hidden');
             setActionMode('add');
-            generateAdminCode(); 
+            // Đã xóa generateAdminCode() vì không dùng giao diện sinh code nữa
         }
 
         function closeQuickEntryModal() {
@@ -3963,34 +3980,7 @@ newItemObj = {
             }
         }
 
-        function generateAdminCode() {
-            const textarea = document.getElementById('quickEntryCodeOutput');
-            const code = 
-`// BẠN HÃY COPY TOÀN BỘ ĐOẠN MÃ NÀY VÀ DÁN ĐÈ LÊN MÃ CŨ (Thay thế các mảng dữ liệu)
-
-let pdfFiles = ${JSON.stringify(pdfFiles, null, 4)};
-
-let allResources = ${JSON.stringify(allResources, null, 4)};
-
-let tdsMsdsFiles = ${JSON.stringify(tdsMsdsFiles, null, 4)};
-
-let quizList = ${JSON.stringify(quizList, null, 4)};
-
-let reportList = ${JSON.stringify(reportList, null, 4)};
-
-let employeeList = ${JSON.stringify(employeeList, null, 4)};
-
-let adminActionLogs = ${JSON.stringify(adminActionLogs, null, 4)};
-`;
-            textarea.value = code;
-        }
-
-        function copyGeneratedCode() {
-            const textarea = document.getElementById('quickEntryCodeOutput');
-            textarea.select();
-            document.execCommand('copy');
-            alert(currentLang === 'vi' ? "Đã copy toàn bộ mã cấu trúc! Bạn hãy mở file code gốc và dán thay thế." : "Copied! Please paste and replace in your original code file.");
-        }
+        
           function openImageModal(imgSrc) {
             const modal = document.getElementById('imageModal');
             const modalImg = document.getElementById('modalImg');
