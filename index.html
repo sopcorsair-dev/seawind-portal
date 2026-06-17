@@ -5415,23 +5415,24 @@ newItemObj = {
             // Gọi hàm kéo dữ liệu từ Google Sheets
             await fetchDatabaseFromCloud();
 
-            // TẮT MÀN HÌNH CHỜ SAU KHI TẢI XONG (Đã sửa lỗi trùng lặp biến)
+            // TẮT MÀN HÌNH CHỜ SAU KHI TẢI XONG
             const globalLoaderEl = document.getElementById('globalLoader');
             if (globalLoaderEl) globalLoaderEl.remove();
 
-            // BẬT VIDEO HƯỚNG DẪN (CHỈ BẬT KHI MỞ WEB BÌNH THƯỜNG, BỎ QUA NẾU ĐANG QUÉT MÃ QR)
-            const isScanningQR = window.location.search.includes('viewEmp');
-            
-            if (!sessionStorage.getItem('introVideoShown') && !isScanningQR) {
+            // KIỂM TRA XEM CÓ PHẢI LÀ QUÉT MÃ QR KHÔNG
+            const urlParams = new URLSearchParams(window.location.search);
+            const viewEmpId = urlParams.get('viewEmp');
+
+            // BẬT VIDEO HƯỚNG DẪN (CHỈ BẬT KHI MỞ BÌNH THƯỜNG, CHẶN LẠI NẾU ĐANG QUÉT MÃ QR)
+            if (!sessionStorage.getItem('introVideoShown') && !viewEmpId) {
                 setTimeout(() => {
                     document.getElementById('introVideoModal').classList.remove('hidden');
                     sessionStorage.setItem('introVideoShown', 'true');
                 }, 500); 
             }
             
-            // Nếu người dùng quét mã QR, đánh dấu ngầm là đã xem video để các lần F5 sau video cũng không làm phiền
-            if (isScanningQR) {
-                sessionStorage.setItem('introVideoShown', 'true');
+            if (viewEmpId) {
+                sessionStorage.setItem('introVideoShown', 'true'); // Đánh dấu đã xem để lần sau F5 cũng không bị hiện video
             }
 
             // GỌI CÁC HÀM RENDER ĐỂ VẼ DỮ LIỆU LÊN GIAO DIỆN
@@ -5445,12 +5446,8 @@ newItemObj = {
             updateAnnouncement();
             initNotifications(); 
             updateRetrainAlerts();
-// KÍCH HOẠT HỆ THỐNG QUÉT VÀ GỬI CẢNH BÁO TỰ ĐỘNG
-            // checkAndSendExpiryAlerts(); 
 
-            // XỬ LÝ MÃ QR 
-            const urlParams = new URLSearchParams(window.location.search);
-            const viewEmpId = urlParams.get('viewEmp');
+            // BẬT BẢNG CHỌN NGÔN NGỮ NẾU NGƯỜI DÙNG QUÉT MÃ QR
             if (viewEmpId) {
                 setTimeout(() => { showQrLanguageSelector(viewEmpId); }, 300);
             }
