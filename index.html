@@ -2899,7 +2899,8 @@ function analyzeHeatmapAI() {
             document.getElementById('det-emp-avatar').src = emp.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=120';
 
             // --- XỬ LÝ LINK MÃ QR CODE ---
-            let baseUrl = window.location.href.split('?')[0]; 
+            // CẮT BỎ CẢ DẤU '?' VÀ DẤU '#' ĐỂ LINK LUÔN SẠCH TRƯỚC KHI GẮN THAM SỐ
+            let baseUrl = window.location.href.split('?')[0].split('#')[0]; 
             
             // NẾU CHƯA CÓ DOMAIN: Tạm thời dùng link Google để bạn lấy điện thoại quét test thử
             if (baseUrl.startsWith('file:///')) {
